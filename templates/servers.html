@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header Section -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1 text-primary">
+            <i class="fas fa-server me-2"></i>Sunucular
+          </h2>
+          <p class="text-muted mb-0">Sisteminizdeki tüm sunucuları yönetin</p>
+        </div>
+        {% if current_user.has_permission('add_server') %}
+        <a href="/servers/add" class="btn btn-primary btn-lg rounded-pill shadow">
+          <i class="fas fa-plus me-2"></i>Yeni Sunucu Ekle
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              <i class="fas fa-info-circle me-2"></i>{{ msg }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Statistics Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100 rounded-4">
+            <div class="card-body text-center">
+              <div class="display-6 text-primary mb-2">
+                <i class="fas fa-server"></i>
+              </div>
+              <h5 class="card-title text-muted">Toplam Sunucu</h5>
+              <h3 class="text-primary mb-0">{{ servers|length }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100 rounded-4">
+            <div class="card-body text-center">
+              <div class="display-6 text-success mb-2">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h5 class="card-title text-muted">Aktif</h5>
+              <h3 class="text-success mb-0" id="active-count">-</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100 rounded-4">
+            <div class="card-body text-center">
+              <div class="display-6 text-warning mb-2">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <h5 class="card-title text-muted">Uyarı</h5>
+              <h3 class="text-warning mb-0" id="warning-count">-</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100 rounded-4">
+            <div class="card-body text-center">
+              <div class="display-6 text-danger mb-2">
+                <i class="fas fa-times-circle"></i>
+              </div>
+              <h5 class="card-title text-muted">Hata</h5>
+              <h3 class="text-danger mb-0" id="error-count">-</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Servers Grid -->
+      {% if servers %}
+      <div class="row">
+        {% for server in servers %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="card server-card border-0 shadow-lg h-100 rounded-4 position-relative" data-server-id="{{ server.id }}">
+            <div class="card-header bg-gradient-primary text-white border-0 rounded-top-4 d-flex justify-content-between align-items-center py-3 px-4">
+                <h5 class="mb-0">
+                  <i class="fas fa-server me-2"></i>{{ server.name }}
+                </h5>
+                <div class="dropdown">
+                <button class="btn btn-link text-white p-0 fs-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="outline:none;">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow rounded-3 animate__animated animate__fadeIn">
+                    {% if current_user.has_permission('edit_server') %}
+                    <li><a class="dropdown-item" href="/servers/edit/{{ server.id }}">
+                      <i class="fas fa-edit me-2"></i>Düzenle
+                    </a></li>
+                    {% endif %}
+                                                              <li><a class="dropdown-item test-connection-btn" href="#" data-server-id="{{ server.id }}" data-server-name="{{ server.name }}">
+                       <i class="fas fa-plug me-2"></i>Bağlantı Testi
+                     </a></li>
+                     {% if current_user.has_permission('delete_server') %}
+                     <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item text-danger fw-bold delete-server-btn" href="#" data-server-id="{{ server.id }}" data-server-name="{{ server.name }}">
+                    <i class="fas fa-trash me-2"></i>Sunucuyu Sil
+                     </a></li>
+                    {% endif %}
+                  </ul>
+              </div>
+            </div>
+            <div class="card-body p-4">
+              <div class="server-info mb-3">
+                <div class="info-item mb-3">
+                  <div class="info-label text-muted small">
+                    <i class="fas fa-network-wired me-1"></i>Host/IP
+                  </div>
+                  <div class="info-value">
+                    <code class="bg-light px-2 py-1 rounded">{{ server.host }}</code>
+                  </div>
+                </div>
+                <div class="info-item mb-3">
+                  <div class="info-label text-muted small">
+                    <i class="fas fa-door-open me-1"></i>Port
+                  </div>
+                  <div class="info-value">
+                    <span class="badge bg-secondary">{{ server.port }}</span>
+                  </div>
+                </div>
+                <div class="info-item mb-3">
+                  <div class="info-label text-muted small">
+                    <i class="fas fa-user me-1"></i>Kullanıcı
+                  </div>
+                  <div class="info-value">
+                    <strong>{{ server.username }}</strong>
+                  </div>
+                </div>
+              </div>
+              <hr class="my-3">
+              <!-- Connection Status -->
+              <div class="connection-status text-center">
+                <div class="status-indicator mb-2" id="status-indicator-{{ server.id }}">
+                  <div class="status-dot status-unknown"></div>
+                  <span class="status-text">Durum Bilinmiyor</span>
+                </div>
+                <button class="btn btn-outline-primary btn-sm w-100 test-connection-btn rounded-pill" data-server-id="{{ server.id }}" data-server-name="{{ server.name }}" id="test-btn-{{ server.id }}">
+                   <i class="fas fa-plug me-1"></i>Bağlantı Testi
+                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <!-- Empty State -->
+      <div class="text-center py-5">
+        <div class="empty-state">
+          <div class="empty-icon mb-4">
+            <i class="fas fa-server fa-4x text-muted"></i>
+          </div>
+          <h3 class="text-muted mb-3">Henüz Sunucu Eklenmemiş</h3>
+          <p class="text-muted mb-4">İlk sunucunuzu ekleyerek başlayın ve sistemlerinizi yönetmeye başlayın.</p>
+          {% if current_user.has_permission('add_server') %}
+          <a href="/servers/add" class="btn btn-primary btn-lg rounded-pill shadow">
+            <i class="fas fa-plus me-2"></i>İlk Sunucuyu Ekle
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.server-card {
+  transition: all 0.3s ease;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10) !important;
+}
+
+.server-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.13) !important;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+}
+
+.dropdown-menu {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  border: none;
+  min-width: 180px;
+  animation: fadeIn 0.2s;
+}
+
+.dropdown-item {
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.dropdown-item.text-danger, .dropdown-item.text-danger:active {
+  color: #dc3545 !important;
+  font-weight: bold;
+}
+
+.dropdown-item.text-danger:hover {
+  background: rgba(220, 53, 69, 0.08);
+  color: #fff !important;
+}
+
+.dropdown-item:active, .dropdown-item:focus {
+  background: #f3f4f6;
+  color: #2563eb;
+}
+
+.btn-link {
+  text-decoration: none;
+  font-size: 1.7rem;
+  padding: 0 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.btn-link:hover, .btn-link:focus {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.card-header {
+  border-radius: 24px 24px 0 0 !important;
+}
+
+.info-item {
+  transition: all 0.2s ease;
+}
+
+.info-item:hover {
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  padding: 8px;
+  margin: -8px;
+}
+
+.info-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-size: 0.95rem;
+}
+
+.connection-status {
+  padding: 15px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-unknown {
+  background: #6c757d;
+  animation: pulse 2s infinite;
+}
+
+.status-success {
+  background: #28a745;
+  animation: pulse 2s infinite;
+}
+
+.status-error {
+  background: #dc3545;
+  animation: pulse 2s infinite;
+}
+
+.status-warning {
+  background: #ffc107;
+  animation: pulse 2s infinite;
+}
+
+.status-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.empty-state {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.empty-icon {
+  opacity: 0.5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+</style>
+
+<script>
+let serverStatuses = {};
+
+function testConnection(serverId, serverName) {
+    const statusIndicator = document.getElementById(`status-indicator-${serverId}`);
+    const testBtn = document.getElementById(`test-btn-${serverId}`);
+    const originalText = testBtn.innerHTML;
+    
+    // Loading durumu
+    testBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Test ediliyor...';
+    testBtn.disabled = true;
+    
+    // Status indicator'ı loading durumuna getir
+    statusIndicator.innerHTML = `
+      <div class="status-dot status-unknown"></div>
+      <span class="status-text">Test ediliyor...</span>
+    `;
+    
+    fetch(`/servers/test/${serverId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            serverStatuses[serverId] = 'success';
+            statusIndicator.innerHTML = `
+              <div class="status-dot status-success"></div>
+              <span class="status-text text-success">Bağlantı Başarılı</span>
+            `;
+        } else {
+            serverStatuses[serverId] = 'error';
+            statusIndicator.innerHTML = `
+              <div class="status-dot status-error"></div>
+              <span class="status-text text-danger">Bağlantı Hatası</span>
+            `;
+        }
+        updateStatistics();
+    })
+    .catch(error => {
+        serverStatuses[serverId] = 'error';
+        statusIndicator.innerHTML = `
+          <div class="status-dot status-error"></div>
+          <span class="status-text text-danger">Test Hatası</span>
+        `;
+        updateStatistics();
+    })
+    .finally(() => {
+        testBtn.innerHTML = originalText;
+        testBtn.disabled = false;
+    });
+}
+
+function deleteServer(serverId, serverName) {
+    if (confirm(`${serverName} sunucusunu silmek istediğinize emin misiniz?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/servers/delete/${serverId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function updateStatistics() {
+    const counts = {
+        success: 0,
+        error: 0,
+        warning: 0
+    };
+    
+    Object.values(serverStatuses).forEach(status => {
+        if (counts.hasOwnProperty(status)) {
+            counts[status]++;
+        }
+    });
+    
+    document.getElementById('active-count').textContent = counts.success;
+    document.getElementById('error-count').textContent = counts.error;
+    document.getElementById('warning-count').textContent = counts.warning;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Test connection buttons
+    document.querySelectorAll('.test-connection-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const serverId = this.getAttribute('data-server-id');
+            const serverName = this.getAttribute('data-server-name');
+            testConnection(serverId, serverName);
+        });
+    });
+    // Silme butonları için event listener
+    document.querySelectorAll('.delete-server-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const serverId = this.getAttribute('data-server-id');
+            const serverName = this.getAttribute('data-server-name');
+            deleteServer(serverId, serverName);
+        });
+    });
+});
+</script>
+{% endblock %} 

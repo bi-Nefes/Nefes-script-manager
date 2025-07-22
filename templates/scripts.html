@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-1">
+        <i class="fas fa-code me-2"></i>Scriptler
+      </h3>
+      <p class="text-muted mb-0">Sunucularda çalıştırılacak scriptleri yönetin</p>
+    </div>
+    {% if current_user.has_permission('add_script') %}
+    <a href="/scripts/add" class="btn btn-primary">
+      <i class="fas fa-plus me-2"></i>Script Ekle
+    </a>
+    {% endif %}
+  </div>
+  
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          <i class="fas fa-info-circle me-2"></i>{{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  
+  <div class="card shadow">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="border-0">#</th>
+              <th class="border-0">Ad</th>
+              <th class="border-0">Tür</th>
+              <th class="border-0">Komut</th>
+              <th class="border-0">Açıklama</th>
+              <th class="border-0 text-center">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for script in scripts %}
+            <tr>
+              <td class="align-middle">{{ loop.index }}</td>
+              <td class="align-middle">
+                <strong>{{ script.name }}</strong>
+              </td>
+              <td class="align-middle">
+                <span class="badge bg-{{ 'primary' if script.script_type == 'shell' else 'success' if script.script_type == 'bash' else 'info' if script.script_type == 'powershell' else 'warning' if script.script_type == 'python' else 'secondary' }}">
+                  <i class="fas fa-{{ 'terminal' if script.script_type == 'shell' else 'code' if script.script_type in ['bash', 'python', 'nodejs', 'php', 'ruby', 'perl'] else 'cog' }} me-1"></i>
+                  {{ script.script_type.upper() }}
+                </span>
+              </td>
+              <td class="align-middle">
+                <code class="text-sm">{{ script.command[:50] }}{{ '...' if script.command|length > 50 else '' }}</code>
+              </td>
+              <td class="align-middle">
+                <span class="text-muted">{{ script.description or '-' }}</span>
+              </td>
+              <td class="align-middle text-center">
+                <div class="btn-group" role="group">
+                  <button class="btn btn-sm {{ 'btn-primary' if script in current_user.favorite_scripts else 'btn-outline-primary' }}" 
+                          onclick="toggleFavorite('{{ script.id }}')" 
+                          title="{{ 'Favorilerden çıkar' if script in current_user.favorite_scripts else 'Favorilere ekle' }}">
+                    <i class="fas fa-heart"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success" onclick="quickRun('{{ script.id }}')" title="Hızlı Çalıştır">
+                    <i class="fas fa-bolt"></i>
+                  </button>
+                  {% if current_user.has_permission('edit_script') %}
+                  <a href="/scripts/edit/{{ script.id }}" class="btn btn-sm btn-outline-warning" title="Düzenle">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  {% endif %}
+                  {% if current_user.has_permission('delete_script') %}
+                  <form action="/scripts/delete/{{ script.id }}" method="POST" style="display:inline;" 
+                        onsubmit="return confirm('Bu script\'i silmek istediğinize emin misiniz?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-5">
+                <div class="text-muted">
+                  <i class="fas fa-code fa-3x mb-3"></i>
+                  <p class="mb-0">Henüz script eklenmemiş.</p>
+                  <a href="/scripts/add" class="btn btn-primary btn-sm mt-2">
+                    <i class="fas fa-plus me-1"></i>İlk Script'i Ekle
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.5em 0.75em;
+}
+
+.table > :not(caption) > * > * {
+  padding: 1rem 0.75rem;
+}
+
+.btn-group .btn {
+  border-radius: 0.375rem !important;
+  margin: 0 0.125rem;
+}
+</style>
+
+<script>
+// Favori toggle fonksiyonu
+function toggleFavorite(scriptId) {
+  const button = event.target.closest('button');
+  const isFavorite = button.classList.contains('btn-primary');
+  
+  const url = isFavorite ? '/api/favorites/remove' : '/api/favorites/add';
+  
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ script_id: scriptId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      if (isFavorite) {
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+        button.title = 'Favorilere ekle';
+        showToast('Favorilerden çıkarıldı!', 'success');
+      } else {
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-primary');
+        button.title = 'Favorilerden çıkar';
+        showToast('Favorilere eklendi!', 'success');
+      }
+    } else {
+      showToast('İşlem başarısız!', 'error');
+    }
+  })
+  .catch(error => {
+    showToast('Bağlantı hatası!', 'error');
+  });
+}
+
+// Hızlı çalıştırma fonksiyonu
+function quickRun(scriptId) {
+  fetch(`/api/servers`)
+    .then(response => response.json())
+    .then(servers => {
+      if (servers.length === 0) {
+        showToast('Önce sunucu eklemelisiniz!', 'error');
+        return;
+      }
+      
+      if (servers.length === 1) {
+        executeQuickRun(scriptId, servers[0].id);
+      } else {
+        showServerSelectionModal(scriptId, servers);
+      }
+    })
+    .catch(error => {
+      showToast('Sunucu listesi alınamadı!', 'error');
+    });
+}
+
+function showServerSelectionModal(scriptId, servers) {
+  const modal = document.createElement('div');
+  modal.className = 'modal fade';
+  modal.id = 'serverSelectionModal';
+  modal.innerHTML = `
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Sunucu Seçin</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Script'i hangi sunucuda çalıştırmak istiyorsunuz?</p>
+          <div class="list-group">
+            ${servers.map(server => `
+              <button class="list-group-item list-group-item-action" onclick="executeQuickRun('${scriptId}', '${server.id}')">
+                <i class="fas fa-server me-2"></i>${server.name} (${server.host})
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  const modalInstance = new bootstrap.Modal(modal);
+  modalInstance.show();
+  
+  modal.addEventListener('hidden.bs.modal', () => {
+    document.body.removeChild(modal);
+  });
+}
+
+function executeQuickRun(scriptId, serverId) {
+  const modal = document.getElementById('serverSelectionModal');
+  if (modal) {
+    const modalInstance = bootstrap.Modal.getInstance(modal);
+    modalInstance.hide();
+  }
+  
+  showToast('Script çalıştırılıyor...', 'info');
+  
+  fetch('/api/quick-run', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      script_id: scriptId,
+      server_id: serverId
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      showToast('Script başarıyla çalıştırıldı!', 'success');
+    } else {
+      showToast('Script çalıştırılırken hata oluştu: ' + data.message, 'error');
+    }
+  })
+  .catch(error => {
+    showToast('Bağlantı hatası: ' + error.message, 'error');
+  });
+}
+
+// Toast bildirimleri
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast align-items-center text-white bg-${type} border-0`;
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+  
+  const container = document.querySelector('.toast-container') || createToastContainer();
+  container.appendChild(toast);
+  const toastInstance = new bootstrap.Toast(toast);
+  toastInstance.show();
+  
+  toast.addEventListener('hidden.bs.toast', () => {
+    container.removeChild(toast);
+  });
+}
+
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.className = 'toast-container position-fixed top-0 end-0 p-3';
+  container.style.zIndex = '9999';
+  document.body.appendChild(container);
+  return container;
+}
+</script>
+{% endblock %} 

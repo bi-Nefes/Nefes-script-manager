@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 800px;">
+  <div class="row">
+    <!-- Profil Bilgileri -->
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-user-circle me-2"></i>Profil Bilgileri
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-4">
+            <div class="avatar-lg bg-{{ current_user.role_color }} text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+              <i class="fas fa-user fa-2x"></i>
+            </div>
+            <h5 class="mb-1">{{ current_user.username }}</h5>
+            <span class="badge bg-{{ current_user.role_color }} fs-6">
+              <i class="fas fa-user-tag me-1"></i>{{ current_user.role_display_name }}
+            </span>
+          </div>
+          
+          <div class="row">
+            <div class="col-12">
+              <div class="mb-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-envelope me-1"></i>Email
+                </label>
+                <p class="mb-0">
+                  {% if current_user.email %}
+                    <a href="mailto:{{ current_user.email }}" class="text-decoration-none">
+                      {{ current_user.email }}
+                    </a>
+                  {% else %}
+                    <span class="text-muted">Belirtilmemiş</span>
+                  {% endif %}
+                </p>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-calendar me-1"></i>Kayıt Tarihi
+                </label>
+                <p class="mb-0">
+                  {% if current_user.created_at %}
+                    {{ current_user.created_at.strftime('%d.%m.%Y %H:%M') }}
+                  {% else %}
+                    <span class="text-muted">Bilinmiyor</span>
+                  {% endif %}
+                </p>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-clock me-1"></i>Son Giriş
+                </label>
+                <p class="mb-0">
+                  {% if current_user.last_login %}
+                    {{ current_user.last_login.strftime('%d.%m.%Y %H:%M') }}
+                  {% else %}
+                    <span class="text-muted">İlk giriş</span>
+                  {% endif %}
+                </p>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-toggle-on me-1"></i>Hesap Durumu
+                </label>
+                <p class="mb-0">
+                  {% if current_user.is_active %}
+                    <span class="badge bg-success">
+                      <i class="fas fa-check me-1"></i>Aktif
+                    </span>
+                  {% else %}
+                    <span class="badge bg-danger">
+                      <i class="fas fa-times me-1"></i>Pasif
+                    </span>
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-grid">
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+              <i class="fas fa-edit me-1"></i>Profili Düzenle
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Yetki Bilgileri -->
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-info text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>Yetki Bilgileri
+          </h4>
+        </div>
+        <div class="card-body">
+          <h6 class="mb-3">Rol: <span class="badge bg-{{ current_user.role_color }}">{{ current_user.role_display_name }}</span></h6>
+          
+          <div class="mb-3">
+            <h6 class="text-muted">Sahip Olduğunuz Yetkiler:</h6>
+            <div class="row">
+              <div class="col-12">
+                {% set permissions = {
+                  'view_dashboard': 'Dashboard Görüntüleme',
+                  'view_servers': 'Sunucu Görüntüleme',
+                  'view_scripts': 'Script Görüntüleme',
+                  'view_logs': 'Log Görüntüleme',
+                  'view_scheduler': 'Zamanlayıcı Görüntüleme',
+                  'add_server': 'Sunucu Ekleme',
+                  'edit_server': 'Sunucu Düzenleme',
+                  'delete_server': 'Sunucu Silme',
+                  'add_script': 'Script Ekleme',
+                  'edit_script': 'Script Düzenleme',
+                  'delete_script': 'Script Silme',
+                  'run_script': 'Script Çalıştırma',
+                  'add_scheduled_task': 'Zamanlanmış Görev Ekleme',
+                  'edit_scheduled_task': 'Zamanlanmış Görev Düzenleme',
+                  'delete_scheduled_task': 'Zamanlanmış Görev Silme',
+                  'run_scheduled_task': 'Zamanlanmış Görev Çalıştırma',
+                  'delete_log': 'Log Silme',
+                  'view_users': 'Kullanıcı Görüntüleme'
+                } %}
+                
+                {% for permission, description in permissions.items() %}
+                  {% if current_user.has_permission(permission) %}
+                    <div class="d-flex align-items-center mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      <span class="small">{{ description }}</span>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-1"></i>
+            <strong>Rol Açıklaması:</strong>
+            {% if current_user.role == 'admin' %}
+              Tüm yetkilere sahipsiniz. Sistem yönetimi ve kullanıcı yönetimi yapabilirsiniz.
+            {% elif current_user.role == 'manager' %}
+              Sunucu ve script yönetimi, zamanlanmış görevler ve log silme yetkiniz var.
+            {% elif current_user.role == 'user' %}
+              Script çalıştırma ve zamanlanmış görev oluşturma yetkiniz var.
+            {% elif current_user.role == 'viewer' %}
+              Sadece görüntüleme yetkiniz var. Hiçbir değişiklik yapamazsınız.
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Profil Düzenleme Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="editProfileModalLabel">
+          <i class="fas fa-edit me-2"></i>Profili Düzenle
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="/profile/edit">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="username" class="form-label">
+                  <i class="fas fa-user me-1"></i>Kullanıcı Adı
+                </label>
+                <input type="text" class="form-control" id="username" value="{{ current_user.username }}" readonly>
+                <div class="form-text">
+                  <small class="text-muted">Kullanıcı adı değiştirilemez</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="email" class="form-label">
+                  <i class="fas fa-envelope me-1"></i>Email
+                </label>
+                <input type="email" class="form-control" id="email" name="email" 
+                       value="{{ current_user.email or '' }}" 
+                       placeholder="kullanici@example.com">
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <h6 class="mb-3">
+            <i class="fas fa-lock me-1"></i>Şifre Değiştir (isteğe bağlı)
+          </h6>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="current_password" class="form-label">Mevcut Şifre</label>
+                <input type="password" class="form-control" id="current_password" name="current_password" 
+                       placeholder="Mevcut şifrenizi girin">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="new_password" class="form-label">Yeni Şifre</label>
+                <input type="password" class="form-control" id="new_password" name="new_password" 
+                       placeholder="Yeni şifrenizi girin">
+              </div>
+            </div>
+          </div>
+          
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            <strong>Not:</strong> Şifre değiştirmek istemiyorsanız şifre alanlarını boş bırakın.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>İptal
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.avatar-lg {
+  font-size: 2rem;
+}
+
+.badge {
+  font-size: 0.875rem;
+  padding: 0.5em 0.75em;
+}
+</style>
+{% endblock %} 

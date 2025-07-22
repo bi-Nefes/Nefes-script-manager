@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="fas fa-server me-2"></i>{{ 'Sunucu Ekle' if action == 'add' else 'Sunucu Düzenle' }}
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" novalidate>
+        <div class="mb-3">
+          <label for="name" class="form-label"><i class="fas fa-tag me-1"></i>Sunucu Adı</label>
+          <input type="text" class="form-control" id="name" name="name" required value="{{ server.name if server else '' }}" placeholder="Örn: Üretim Sunucusu">
+        </div>
+        <div class="mb-3">
+          <label for="host" class="form-label"><i class="fas fa-globe me-1"></i>IP/Hostname</label>
+          <input type="text" class="form-control" id="host" name="host" required value="{{ server.host if server else '' }}" placeholder="Örn: 192.168.1.10 veya sunucu.domain.com">
+        </div>
+        <div class="mb-3">
+          <label for="port" class="form-label"><i class="fas fa-network-wired me-1"></i>SSH Portu</label>
+          <input type="number" class="form-control" id="port" name="port" required value="{{ server.port if server else 22 }}" placeholder="Varsayılan: 22">
+        </div>
+        <div class="mb-3">
+          <label for="username" class="form-label"><i class="fas fa-user me-1"></i>Kullanıcı Adı</label>
+          <input type="text" class="form-control" id="username" name="username" required value="{{ server.username if server else '' }}" placeholder="Örn: root">
+        </div>
+        <div class="mb-3 position-relative">
+          <label for="password" class="form-label"><i class="fas fa-lock me-1"></i>Şifre</label>
+          <input type="password" class="form-control" id="password" name="password" required value="{{ server.password if server else '' }}" placeholder="Sunucu şifresi">
+          <button type="button" class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-4 me-2" onclick="togglePasswordField('password')">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-save me-2"></i>Kaydet
+          </button>
+          <a href="/servers" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>İptal
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function togglePasswordField(id) {
+  const field = document.getElementById(id);
+  if (field.type === 'password') {
+    field.type = 'text';
+  } else {
+    field.type = 'password';
+  }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}NSM NEFES SCRIPT MANAGER{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        /* Modern Color Palette - Blue-Green Theme */
+        --primary: #3b82f6;
+        --primary-dark: #2563eb;
+        --primary-light: #60a5fa;
+        --secondary: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --info: #06b6d4;
+        
+        /* Neutral Colors */
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --gray-900: #0f172a;
+        
+        /* Background Colors */
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8fafc;
+        --bg-tertiary: #f1f5f9;
+        --bg-dark: #0f172a;
+        
+        /* Text Colors */
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --text-muted: #94a3b8;
+        --text-white: #ffffff;
+        
+        /* Border Colors */
+        --border-light: #e2e8f0;
+        --border-medium: #cbd5e1;
+        --border-dark: #94a3b8;
+        
+        /* Shadows */
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        
+        /* Border Radius */
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        
+        /* Spacing */
+        --spacing-xs: 0.25rem;
+        --spacing-sm: 0.5rem;
+        --spacing-md: 1rem;
+        --spacing-lg: 1.5rem;
+        --spacing-xl: 2rem;
+        --spacing-2xl: 3rem;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+        font-weight: 400;
+      }
+      
+      /* Modern Navbar */
+      .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1100;
+        background: rgba(30, 41, 59, 0.92) !important; /* Koyu lacivert, yarı saydam */
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border-light);
+        box-shadow: var(--shadow-md);
+        padding: 1rem 0;
+        transition: background 0.3s;
+      }
+      .navbar .navbar-brand,
+      .navbar .nav-link,
+      .navbar .dropdown-toggle {
+        color: #fff !important;
+      }
+      .navbar .nav-link.active {
+        background: rgba(59, 130, 246, 0.18);
+        color: #fff !important;
+        box-shadow: var(--shadow-md);
+      }
+      .navbar .nav-link:hover,
+      .navbar .dropdown-toggle:hover {
+        color: var(--info) !important;
+        background: rgba(59, 130, 246, 0.10);
+      }
+      .navbar .dropdown-menu {
+        background: #1e293b;
+        color: #fff;
+        border: none;
+      }
+      .navbar .dropdown-item {
+        color: #fff;
+      }
+      .navbar .dropdown-item:hover {
+        background: rgba(59, 130, 246, 0.18);
+        color: #fff;
+      }
+      
+      /* Modern Cards */
+      .card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+      
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--border-medium);
+      }
+      
+      .card-header {
+        background: linear-gradient(135deg, var(--primary), var(--info));
+        color: var(--text-white);
+        border: none;
+        padding: 1.5rem;
+        font-weight: 600;
+      }
+      
+      .card-body {
+        padding: 1.5rem;
+      }
+      
+      /* Modern Buttons */
+      .btn {
+        font-weight: 500;
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1.5rem;
+        transition: all 0.2s ease;
+        border: none;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+      }
+      
+      .btn:hover::before {
+        left: 100%;
+      }
+      
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--info));
+        color: var(--text-white);
+        box-shadow: var(--shadow-md);
+      }
+      
+      .btn-primary:hover {
+        background: linear-gradient(135deg, var(--info), var(--primary));
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: var(--text-white);
+      }
+      
+      .btn-success {
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: var(--text-white);
+        box-shadow: var(--shadow-md);
+      }
+      
+      .btn-success:hover {
+        background: linear-gradient(135deg, #059669, var(--success));
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: var(--text-white);
+      }
+      
+      .btn-danger {
+        background: linear-gradient(135deg, var(--danger), #dc2626);
+        color: var(--text-white);
+        box-shadow: var(--shadow-md);
+      }
+      
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #dc2626, var(--danger));
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: var(--text-white);
+      }
+      
+      .btn-outline-primary {
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        background: transparent;
+      }
+      
+      .btn-outline-primary:hover {
+        background: var(--primary);
+        color: var(--text-white);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+      
+      /* Modern Tables */
+      .table {
+        background: var(--bg-primary);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-light);
+      }
+      
+      .table thead th {
+        background: linear-gradient(135deg, var(--gray-800), var(--gray-700));
+        color: var(--text-white);
+        border: none;
+        font-weight: 600;
+        padding: 1rem;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.05em;
+      }
+      
+      .table tbody tr {
+        transition: all 0.2s ease;
+      }
+      
+      .table tbody tr:hover {
+        background: var(--bg-secondary);
+        transform: scale(1.01);
+      }
+      
+      .table td {
+        padding: 1rem;
+        border-color: var(--border-light);
+        vertical-align: middle;
+      }
+      
+      /* Modern Badges */
+      .badge {
+        font-weight: 500;
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius-md);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      
+      .badge.bg-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
+      }
+      
+      .badge.bg-success {
+        background: linear-gradient(135deg, var(--success), #059669) !important;
+      }
+      
+      .badge.bg-danger {
+        background: linear-gradient(135deg, var(--danger), #dc2626) !important;
+      }
+      
+      .badge.bg-warning {
+        background: linear-gradient(135deg, var(--warning), #d97706) !important;
+        color: var(--text-white) !important;
+      }
+      
+      /* Modern Forms */
+      .form-control, .form-select {
+        border: 2px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: var(--bg-primary);
+      }
+      
+      .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        background: var(--bg-primary);
+      }
+      
+      .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+      }
+      
+      /* Modern Alerts */
+      .alert {
+        border: none;
+        border-radius: var(--radius-lg);
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        box-shadow: var(--shadow-sm);
+      }
+      
+      .alert-success {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: #065f46;
+        border-left: 4px solid var(--success);
+      }
+      
+      .alert-danger {
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        color: #991b1b;
+        border-left: 4px solid var(--danger);
+      }
+      
+      .alert-warning {
+        background: linear-gradient(135deg, #fffbeb, #fef3c7);
+        color: #92400e;
+        border-left: 4px solid var(--warning);
+      }
+      
+      .alert-info {
+        background: linear-gradient(135deg, #ecfeff, #cffafe);
+        color: #155e75;
+        border-left: 4px solid var(--info);
+      }
+      
+      /* Modern Modals */
+      .modal-content {
+        border: none;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
+        overflow: hidden;
+      }
+      
+      .modal-header {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: var(--text-white);
+        border: none;
+        padding: 1.5rem;
+      }
+      
+      .modal-body {
+        padding: 1.5rem;
+      }
+      
+      .modal-footer {
+        border-top: 1px solid var(--border-light);
+        padding: 1.5rem;
+      }
+      
+      /* Modern Dropdowns */
+      .dropdown-menu {
+        border: none;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        padding: 0.5rem;
+        background: var(--bg-primary);
+      }
+      
+      .dropdown-item {
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+      
+      .dropdown-item:hover {
+        background: var(--bg-secondary);
+        transform: translateX(4px);
+      }
+      
+      /* Dropdown item text rengi */
+      .dropdown-item-text {
+        color: #fff !important;
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: var(--gray-400);
+        border-radius: var(--radius-md);
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-500);
+      }
+      
+      /* Animations */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+      }
+      
+      /* Terminal Loading Animation */
+      @keyframes terminalFlow {
+        0% {
+          opacity: 0;
+          transform: translateY(-30px);
+          color: #00ff00;
+        }
+        50% {
+          opacity: 1;
+          color: #00cc00;
+        }
+        100% {
+          opacity: 0.8;
+          transform: translateY(0);
+          color: #009900;
+        }
+      }
+      
+      .terminal-line {
+        animation: terminalFlow 1.5s ease-out;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        text-shadow: 0 0 5px #00ff00;
+        margin: 2px 0;
+        padding: 2px 10px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+      }
+      
+      .terminal-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-family: 'Courier New', monospace;
+      }
+      
+      .terminal-header {
+        color: #00ff00;
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px #00ff00;
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .navbar-brand {
+          font-size: 1.25rem;
+        }
+        
+        .card-body {
+          padding: 1rem;
+        }
+        
+        .btn {
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+        }
+      }
+      /* Navbar dropdown menüsü her zaman üstte olsun */
+      .dropdown-menu {
+        z-index: 1055 !important;
+      }
+      /* Navbar ve container overflow'u engellemesin */
+      .navbar, .container-fluid, .container {
+        overflow: visible !important;
+      }
+      /* Modal'ın navbar'ın üstünde görünmesi için */
+      .modal {
+        z-index: 1200 !important;
+      }
+      .modal-dialog.custom-lower {
+        margin-top: 10vh !important;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-terminal me-2"></i>NSM NEFES SCRIPT MANAGER
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            {% if current_user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}" href="/">
+                <i class="fas fa-home me-1"></i>Ana Sayfa
+              </a>
+            </li>
+            {% if current_user.has_permission('view_servers') %}
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.endpoint == 'servers' }}" href="/servers">
+                <i class="fas fa-server me-1"></i>Sunucular
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.has_permission('view_scripts') %}
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.endpoint == 'scripts' }}" href="/scripts">
+                <i class="fas fa-code me-1"></i>Scriptler
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.has_permission('run_script') %}
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.endpoint == 'run_script' }}" href="/run">
+                <i class="fas fa-play me-1"></i>Çalıştır
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.has_permission('view_scheduler') %}
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.endpoint == 'scheduler' }}" href="/scheduler">
+                <i class="fas fa-clock me-1"></i>Zamanlayıcı
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.has_permission('view_logs') %}
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.endpoint == 'logs' }}" href="/logs">
+                <i class="fas fa-list me-1"></i>Kayıtlar
+              </a>
+            </li>
+            {% endif %}
+            {% if current_user.has_permission('view_users') %}
+            <li class="nav-item">
+              <a class="nav-link {{ 'active' if request.endpoint == 'users' }}" href="/users">
+                <i class="fas fa-users me-1"></i>Kullanıcılar
+              </a>
+            </li>
+            {% endif %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                {% if current_user.profile_photo %}
+                  <img src="{{ url_for('static', filename=current_user.profile_photo) }}" 
+                       class="rounded-circle me-1" width="24" height="24" alt="Avatar">
+                {% else %}
+                  <div class="d-inline-block rounded-circle bg-primary text-white text-center me-1" 
+                       style="width: 24px; height: 24px; line-height: 24px; font-size: 12px; font-weight: bold;">
+                    {{ current_user.username[0].upper() }}
+                  </div>
+                {% endif %}
+                {{ current_user.username }}
+              </a>
+              <ul class="dropdown-menu">
+                <li><span class="dropdown-item-text text-muted">{{ current_user.role_display_name }}</span></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Çıkış</a></li>
+              </ul>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+    
+    <main class="py-4 fade-in-up">
+      {% block content %}{% endblock %}
+    </main>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/main.js"></script>
+    <script src="/static/output-functions.js"></script>
+    <script src="/static/quick-access.js"></script>
+    
+    {% block scripts %}{% endblock %}
+  </body>
+</html> 

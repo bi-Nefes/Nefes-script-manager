@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="fas fa-code me-2"></i>
+        {{ 'Script Ekle' if action == 'add' else 'Script Düzenle' }}
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" novalidate>
+        <div class="row">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label for="name" class="form-label">
+                <i class="fas fa-tag me-1"></i>Script Adı
+              </label>
+              <input type="text" class="form-control" id="name" name="name" required 
+                     value="{{ script.name if script else '' }}" 
+                     placeholder="Örn: Sistem Durumu Kontrolü">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="script_type" class="form-label">
+                <i class="fas fa-cog me-1"></i>Script Türü
+              </label>
+              <select class="form-select" id="script_type" name="script_type" required>
+                <option value="shell" {{ 'selected' if script and script.script_type == 'shell' else '' }}>Shell</option>
+                <option value="bash" {{ 'selected' if script and script.script_type == 'bash' else '' }}>Bash</option>
+                <option value="powershell" {{ 'selected' if script and script.script_type == 'powershell' else '' }}>PowerShell</option>
+                <option value="python" {{ 'selected' if script and script.script_type == 'python' else '' }}>Python</option>
+                <option value="nodejs" {{ 'selected' if script and script.script_type == 'nodejs' else '' }}>Node.js</option>
+                <option value="php" {{ 'selected' if script and script.script_type == 'php' else '' }}>PHP</option>
+                <option value="ruby" {{ 'selected' if script and script.script_type == 'ruby' else '' }}>Ruby</option>
+                <option value="perl" {{ 'selected' if script and script.script_type == 'perl' else '' }}>Perl</option>
+                <option value="exe" {{ 'selected' if script and script.script_type == 'exe' else '' }}>Windows EXE</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="command" class="form-label">
+            <i class="fas fa-terminal me-1"></i>Komut / Kod
+          </label>
+          <textarea class="form-control" id="command" name="command" required rows="8" 
+                    placeholder="Script türünüze göre komut veya kodu buraya yazın...">{{ script.command if script else '' }}</textarea>
+          <div class="form-text">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              <span id="script-help">Shell komutları için: ls -la, df -h, ps aux gibi</span>
+            </small>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="description" class="form-label">
+            <i class="fas fa-align-left me-1"></i>Açıklama (isteğe bağlı)
+          </label>
+          <textarea class="form-control" id="description" name="description" rows="3" 
+                    placeholder="Bu script'in ne yaptığını açıklayın...">{{ script.description if script else '' }}</textarea>
+        </div>
+        
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-save me-2"></i>Kaydet
+          </button>
+          <a href="/scripts" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>İptal
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const scriptTypeSelect = document.getElementById('script_type');
+  const commandTextarea = document.getElementById('command');
+  const scriptHelp = document.getElementById('script-help');
+  
+  const scriptExamples = {
+    'shell': 'Shell komutları için: ls -la, df -h, ps aux gibi',
+    'bash': 'Bash script için: #!/bin/bash\necho "Hello World"\ndate\nwhoami',
+    'powershell': 'PowerShell için: Get-Process\nGet-Service\nGet-Date\nWrite-Host "Hello"',
+    'python': 'Python script için: #!/usr/bin/env python3\nimport os\nprint("Hello World")\nprint(os.getcwd())',
+    'nodejs': 'Node.js için: console.log("Hello World");\nconsole.log(process.cwd());\nconsole.log(process.version);',
+    'php': 'PHP için: <?php\necho "Hello World";\necho date("Y-m-d H:i:s");\necho getcwd();\n?>',
+    'ruby': 'Ruby için: puts "Hello World"\nputs Time.now\nputs Dir.pwd',
+    'perl': 'Perl için: #!/usr/bin/perl\nprint "Hello World\\n";\nprint localtime() . "\\n";',
+    'exe': 'Windows EXE için: disk2vhd.exe, ipconfig.exe, systeminfo.exe gibi'
+  };
+  
+  const scriptPlaceholders = {
+    'shell': 'ls -la\ndf -h\nps aux | head -10',
+    'bash': '#!/bin/bash\necho "=== Sistem Bilgileri ==="\necho "Tarih: $(date)"\necho "Kullanıcı: $(whoami)"\necho "Çalışma Dizini: $(pwd)"\necho "Disk Kullanımı:"\ndf -h',
+    'powershell': 'Write-Host "=== Sistem Bilgileri ===" -ForegroundColor Green\nGet-Date\n$env:USERNAME\nGet-Location\nWrite-Host "Disk Kullanımı:" -ForegroundColor Yellow\nGet-WmiObject -Class Win32_LogicalDisk | Select-Object DeviceID, Size, FreeSpace',
+    'python': '#!/usr/bin/env python3\nimport os\nimport datetime\n\nprint("=== Sistem Bilgileri ===")\nprint(f"Tarih: {datetime.datetime.now()}")\nprint(f"Kullanıcı: {os.getenv(\'USER\', \'Unknown\')}")\nprint(f"Çalışma Dizini: {os.getcwd()}")\nprint("Disk Kullanımı:")\nos.system("df -h")',
+    'nodejs': 'console.log("=== Sistem Bilgileri ===");\nconsole.log(`Tarih: ${new Date()}`);\nconsole.log(`Kullanıcı: ${process.env.USER || \'Unknown\'}`);\nconsole.log(`Çalışma Dizini: ${process.cwd()}`);\nconsole.log(`Node.js Versiyonu: ${process.version}`);',
+    'php': '<?php\necho "=== Sistem Bilgileri ===\\n";\necho "Tarih: " . date("Y-m-d H:i:s") . "\\n";\necho "Kullanıcı: " . get_current_user() . "\\n";\necho "Çalışma Dizini: " . getcwd() . "\\n";\necho "PHP Versiyonu: " . phpversion() . "\\n";\n?>',
+    'ruby': 'puts "=== Sistem Bilgileri ==="\nputs "Tarih: #{Time.now}"\nputs "Kullanıcı: #{ENV[\'USER\'] || \'Unknown\'}"\nputs "Çalışma Dizini: #{Dir.pwd}"\nputs "Ruby Versiyonu: #{RUBY_VERSION}"',
+    'perl': '#!/usr/bin/perl\nuse strict;\nuse warnings;\n\nprint "=== Sistem Bilgileri ===\\n";\nprint "Tarih: " . localtime() . "\\n";\nprint "Kullanıcı: " . $ENV{USER} . "\\n";\nprint "Çalışma Dizini: " . `pwd` . "\\n";\nprint "Perl Versiyonu: " . $^V . "\\n";',
+    'exe': 'disk2vhd.exe\nipconfig.exe\nsysteminfo.exe\nwmic.exe logicaldisk get size,freespace,caption'
+  };
+  
+  function updateScriptHelp() {
+    const selectedType = scriptTypeSelect.value;
+    scriptHelp.textContent = scriptExamples[selectedType];
+    commandTextarea.placeholder = scriptPlaceholders[selectedType];
+  }
+  
+  scriptTypeSelect.addEventListener('change', updateScriptHelp);
+  updateScriptHelp(); // İlk yükleme için
+});
+</script>
+{% endblock %} 

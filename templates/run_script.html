@@ -1,0 +1,494 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 900px;">
+  <div class="card shadow">
+    <div class="card-header bg-info text-white">
+      <h3 class="mb-0">
+        <i class="fas fa-play me-2"></i>Script Çalıştır
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" class="mb-4" novalidate>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="server_id" class="form-label">
+                <i class="fas fa-server me-1"></i>Sunucu(lar)
+              </label>
+              <select class="form-select" id="server_id" name="server_id" multiple required>
+                {% for server in servers %}
+                <option value="{{ server.id }}"
+                  {% if selected_server and selected_server.id == server.id %}selected{% endif %}>
+                  {{ server.name }} ({{ server.host }})
+                </option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">Birden fazla sunucu seçmek için Ctrl veya Shift tuşunu kullanın.</small>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                <i class="fas fa-code me-1"></i>Script(ler)
+              </label>
+              <div class="d-flex gap-2 mb-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAllScripts(true)">
+                  <i class="fas fa-check-double me-1"></i>Tümünü Seç
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllScripts(false)">
+                  <i class="fas fa-times me-1"></i>Seçimi Temizle
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleFavorites()">
+                  <i class="fas fa-heart me-1"></i>Favorileri Seç
+                </button>
+              </div>
+              <div class="script-selection-container" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 10px;">
+                {% for script in scripts %}
+                <div class="form-check mb-2">
+                  <input class="form-check-input script-checkbox" type="checkbox" name="script_ids" value="{{ script.id }}" id="script_{{ script.id }}">
+                  <label class="form-check-label d-flex justify-content-between align-items-center" for="script_{{ script.id }}">
+                    <div>
+                      <strong>{{ script.name }}</strong>
+                      <br><small class="text-muted">{{ script.description[:50] }}{% if script.description|length > 50 %}...{% endif %}</small>
+                    </div>
+                    <div class="d-flex gap-1">
+                      {% if script in current_user.favorite_scripts %}
+                      <span class="badge bg-danger"><i class="fas fa-heart"></i></span>
+                      {% endif %}
+                      <span class="badge bg-{{ script.script_type|script_type_color }}">{{ script.script_type }}</span>
+                    </div>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+              <small class="form-text text-muted">Birden fazla script seçebilirsiniz. Tümü paralel olarak çalıştırılacak.</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Çalıştırma Modu -->
+        <div class="row mb-3">
+          <div class="col-12">
+            <label class="form-label">
+              <i class="fas fa-cogs me-1"></i>Çalıştırma Modu
+            </label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="execution_mode" id="parallel" value="parallel" checked>
+              <label class="btn btn-outline-success" for="parallel">
+                <i class="fas fa-bolt me-1"></i>Paralel (Hızlı)
+              </label>
+              
+              <input type="radio" class="btn-check" name="execution_mode" id="sequential" value="sequential">
+              <label class="btn btn-outline-warning" for="sequential">
+                <i class="fas fa-list-ol me-1"></i>Sıralı (Güvenli)
+              </label>
+              
+              <input type="radio" class="btn-check" name="execution_mode" id="conditional" value="conditional">
+              <label class="btn btn-outline-info" for="conditional">
+                <i class="fas fa-shield-alt me-1"></i>Koşullu (Akıllı)
+              </label>
+            </div>
+            <small class="form-text text-muted">
+              <strong>Paralel:</strong> Tüm scriptler aynı anda çalışır (Hızlı) | 
+              <strong>Sıralı:</strong> Scriptler sırayla çalışır (Güvenli) | 
+              <strong>Koşullu:</strong> Başarılı olursa devam eder (Akıllı)
+            </small>
+          </div>
+        </div>
+        
+        <!-- Sunucu Grupları Seçimi -->
+        <!-- Bu bölüm kaldırıldı: Sunucu grubu ve Grupları Yükle butonu -->
+        
+        <div class="d-grid">
+          <button type="submit" class="btn btn-success btn-lg" id="runButton">
+            <i class="fas fa-rocket me-2"></i>Script'leri Çalıştır
+          </button>
+        </div>
+      </form>
+      
+      <!-- Progress Bar -->
+      <div id="progressContainer" class="mt-4" style="display: none;">
+        <div class="progress mb-3" style="height: 25px;">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div class="text-center">
+          <span id="progressText">Hazırlanıyor...</span>
+        </div>
+      </div>
+      
+      <!-- Results Container -->
+      <div id="resultsContainer" class="mt-4">
+              {% if outputs %}
+        {% for item in outputs %}
+          <div class="alert alert-{{ 'success' if item.status == 'success' else 'danger' }} mt-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <strong>{{ item.server.name }} ({{ item.server.host }})</strong>
+                {% if item.script %}
+                  <br><small class="text-muted">{{ item.script.name }}</small>
+                {% endif %}
+                {% if item.execution_time %}
+                  <br><small class="text-info">
+                    <i class="fas fa-clock me-1"></i>{{ "%.2f"|format(item.execution_time) }} saniye
+                  </small>
+                {% endif %}
+              </div>
+              <div class="d-flex gap-1">
+                <span class="badge bg-{{ 'success' if item.status == 'success' else 'danger' }}">
+                  <i class="fas fa-{{ 'check' if item.status == 'success' else 'times' }} me-1"></i>
+                  {{ 'Başarılı' if item.status == 'success' else 'Hata' }}
+                </span>
+                <button class="btn btn-sm btn-outline-secondary" onclick="copyOutput(this)">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+            <pre class="mb-0 mt-2" style="white-space: pre-wrap;">{{ item.output }}</pre>
+          </div>
+        {% endfor %}
+      {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.output-container pre {
+  border: 1px solid #495057;
+  background: #212529 !important;
+  color: #f8f9fa !important;
+  font-family: 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.alert {
+  border: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-select:focus {
+  border-color: #0dcaf0;
+  box-shadow: 0 0 0 0.2rem rgba(13, 202, 240, 0.25);
+}
+
+.script-selection-container {
+  background: #f8f9fa;
+  border-color: #dee2e6 !important;
+}
+
+.script-selection-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.script-selection-container::-webkit-scrollbar-track {
+  background: #e9ecef;
+}
+
+.script-selection-container::-webkit-scrollbar-thumb {
+  background: #0d6efd;
+  border-radius: 3px;
+}
+
+.form-check-input:checked {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-check:checked + .btn-outline-success {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.btn-check:checked + .btn-outline-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.btn-check:checked + .btn-outline-info {
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+  color: #ffffff;
+}
+
+/* Progress bar özelleştirmeleri */
+#progressContainer {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+#progressContainer .progress {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#progressContainer .progress-bar {
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+#progressText {
+  font-weight: 600;
+  color: #212529;
+  margin-top: 0.5rem;
+}
+</style>
+
+<script>
+// Script seçim fonksiyonları
+function toggleAllScripts(select) {
+  const checkboxes = document.querySelectorAll('.script-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = select;
+  });
+  updateRunButton();
+}
+
+function toggleFavorites() {
+  const checkboxes = document.querySelectorAll('.script-checkbox');
+  checkboxes.forEach(checkbox => {
+    const label = checkbox.nextElementSibling;
+    const favoriteBadge = label.querySelector('.badge.bg-danger');
+    checkbox.checked = favoriteBadge !== null;
+  });
+  updateRunButton();
+}
+
+function updateRunButton() {
+  const selectedScripts = document.querySelectorAll('.script-checkbox:checked').length;
+  const selectedServers = document.getElementById('server_id').selectedOptions.length;
+  const runButton = document.getElementById('runButton');
+  
+  if (selectedScripts > 0 && selectedServers > 0) {
+    runButton.disabled = false;
+    runButton.innerHTML = `<i class="fas fa-rocket me-2"></i>${selectedScripts} Script'i ${selectedServers} Sunucuda Çalıştır`;
+  } else {
+    runButton.disabled = true;
+    runButton.innerHTML = `<i class="fas fa-rocket me-2"></i>Script'leri Çalıştır`;
+  }
+}
+
+        // Form submit handler
+        document.querySelector('form').addEventListener('submit', function(e) {
+          const selectedScripts = document.querySelectorAll('.script-checkbox:checked').length;
+          const selectedServers = document.getElementById('server_id').selectedOptions.length;
+          
+          if (selectedScripts === 0) {
+            e.preventDefault();
+            showToast('En az bir script seçmelisiniz!', 'error');
+            return;
+          }
+          
+          if (selectedServers === 0) {
+            e.preventDefault();
+            showToast('En az bir sunucu seçmelisiniz!', 'error');
+            return;
+          }
+          
+          // Progress bar göster ve başlat
+          startProgressBar(selectedScripts * selectedServers);
+          document.getElementById('runButton').disabled = true;
+          document.getElementById('runButton').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Çalıştırılıyor...';
+        });
+        
+        // Progress bar fonksiyonları
+        let progressInterval;
+        let currentProgress = 0;
+        let totalTasks = 0;
+        
+        function startProgressBar(totalTasksCount) {
+          totalTasks = totalTasksCount;
+          currentProgress = 0;
+          
+          const progressContainer = document.getElementById('progressContainer');
+          const progressBar = progressContainer.querySelector('.progress-bar');
+          const progressText = document.getElementById('progressText');
+          
+          progressContainer.style.display = 'block';
+          progressBar.style.width = '0%';
+          progressText.textContent = 'Hazırlanıyor...';
+          
+          // Progress bar animasyonu başlat
+          progressInterval = setInterval(() => {
+            if (currentProgress < totalTasks) {
+              // Gerçekçi progress animasyonu
+              const baseProgress = currentProgress / totalTasks;
+              const randomIncrement = Math.random() * 0.05; // %5'e kadar rastgele artış
+              const animatedProgress = Math.min(baseProgress + randomIncrement, 1);
+              const percentage = Math.round(animatedProgress * 100);
+              
+              progressBar.style.width = percentage + '%';
+              
+              // Progress bar rengini güncelle
+              if (percentage < 30) {
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-info';
+                progressText.textContent = `Bağlantılar kuruluyor... (${currentProgress}/${totalTasks})`;
+              } else if (percentage < 60) {
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-warning';
+                progressText.textContent = `Scriptler çalıştırılıyor... (${currentProgress}/${totalTasks})`;
+              } else if (percentage < 90) {
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+                progressText.textContent = `Sonuçlar toplanıyor... (${currentProgress}/${totalTasks})`;
+              } else {
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
+                progressText.textContent = `Tamamlanıyor... (${currentProgress}/${totalTasks})`;
+              }
+            }
+          }, 200);
+        }
+        
+        function updateProgress(completedTasks) {
+          currentProgress = completedTasks;
+          
+          if (currentProgress >= totalTasks) {
+            clearInterval(progressInterval);
+            
+            const progressBar = document.getElementById('progressContainer').querySelector('.progress-bar');
+            const progressText = document.getElementById('progressText');
+            
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar bg-success';
+            progressText.textContent = `Tamamlandı! (${totalTasks}/${totalTasks})`;
+            
+            // Başarı animasyonu
+            progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+            
+            // Progress bar'ı gizle
+            setTimeout(() => {
+              document.getElementById('progressContainer').style.display = 'none';
+              document.getElementById('runButton').disabled = false;
+              document.getElementById('runButton').innerHTML = '<i class="fas fa-rocket me-2"></i>Script\'leri Çalıştır';
+              
+              // Başarı mesajı göster
+              showToast(`${totalTasks} görev başarıyla tamamlandı!`, 'success');
+            }, 2000);
+          }
+        }
+
+// Checkbox event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  const checkboxes = document.querySelectorAll('.script-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', updateRunButton);
+  });
+  
+  const serverSelect = document.getElementById('server_id');
+  serverSelect.addEventListener('change', updateRunButton);
+  
+  updateRunButton();
+});
+
+// Sunucu gruplarını yükle
+function loadGroups() {
+  fetch('/api/server-groups')
+    .then(response => response.json())
+    .then(groups => {
+      const groupButtons = document.getElementById('group-buttons');
+      groupButtons.innerHTML = '';
+      
+      if (groups.length === 0) {
+        groupButtons.innerHTML = '<button type="button" class="btn btn-outline-secondary" disabled>Grup bulunamadı</button>';
+        return;
+      }
+      
+      groups.forEach(group => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-outline-primary';
+        button.style.borderColor = group.color;
+        button.style.color = group.color;
+        button.innerHTML = `<i class="fas fa-layer-group me-1"></i>${group.name} (${group.server_count})`;
+        button.onclick = () => selectGroup(group.id);
+        groupButtons.appendChild(button);
+      });
+    })
+    .catch(error => {
+      console.error('Gruplar yüklenirken hata:', error);
+      document.getElementById('group-buttons').innerHTML = '<button type="button" class="btn btn-outline-danger" disabled>Hata oluştu</button>';
+    });
+}
+
+// Grubu seç ve sunucuları otomatik seç
+function selectGroup(groupId) {
+  fetch(`/api/server-groups/${groupId}/servers`)
+    .then(response => response.json())
+    .then(servers => {
+      const serverSelect = document.getElementById('server_id');
+      
+      // Tüm seçimleri temizle
+      for (let option of serverSelect.options) {
+        option.selected = false;
+      }
+      
+      // Grup sunucularını seç
+      servers.forEach(server => {
+        for (let option of serverSelect.options) {
+          if (option.value == server.id) {
+            option.selected = true;
+            break;
+          }
+        }
+      });
+      
+      updateRunButton();
+      
+      // Kullanıcıya bildir
+      const selectedCount = servers.length;
+      showToast(`${selectedCount} sunucu seçildi (${servers.map(s => s.name).join(', ')})`, 'success');
+    })
+    .catch(error => {
+      console.error('Grup sunucuları yüklenirken hata:', error);
+      showToast('Grup sunucuları yüklenirken hata oluştu!', 'error');
+    });
+}
+
+// Çıktı kopyalama
+function copyOutput(button) {
+  const pre = button.closest('.alert').querySelector('pre');
+  const text = pre.textContent;
+  
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('Çıktı panoya kopyalandı!', 'success');
+  }).catch(function(err) {
+    console.error('Kopyalama hatası:', err);
+    showToast('Kopyalama başarısız!', 'error');
+  });
+}
+
+// Toast bildirimi göster
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast align-items-center text-white bg-${type} border-0`;
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+  
+  const container = document.querySelector('.toast-container') || createToastContainer();
+  container.appendChild(toast);
+  const toastInstance = new bootstrap.Toast(toast);
+  toastInstance.show();
+  
+  toast.addEventListener('hidden.bs.toast', () => {
+    container.removeChild(toast);
+  });
+}
+
+// Toast container oluştur
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.className = 'toast-container position-fixed top-0 end-0 p-3';
+  container.style.zIndex = '9999';
+  document.body.appendChild(container);
+  return container;
+}
+</script>
+{% endblock %} 

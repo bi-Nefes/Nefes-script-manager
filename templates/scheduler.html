@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header Section -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1 text-success">
+            <i class="fas fa-clock me-2"></i>Zamanlanmış Görevler
+          </h2>
+          <p class="text-muted mb-0">Otomatik çalışacak görevlerinizi yönetin</p>
+        </div>
+        <div>
+          <a href="/scheduler/add" class="btn btn-success btn-lg">
+            <i class="fas fa-plus me-2"></i>Yeni Görev Ekle
+          </a>
+        </div>
+      </div>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              <i class="fas fa-info-circle me-2"></i>{{ msg }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Statistics Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="display-6 text-success mb-2">
+                <i class="fas fa-clock"></i>
+              </div>
+              <h5 class="card-title text-muted">Toplam Görev</h5>
+              <h3 class="text-success mb-0">{{ tasks|length }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="display-6 text-success mb-2">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h5 class="card-title text-muted">Aktif</h5>
+              <h3 class="text-success mb-0" id="active-count">{{ tasks|selectattr('is_active')|list|length }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="display-6 text-secondary mb-2">
+                <i class="fas fa-pause-circle"></i>
+              </div>
+              <h5 class="card-title text-muted">Pasif</h5>
+              <h3 class="text-secondary mb-0" id="inactive-count">{{ tasks|rejectattr('is_active')|list|length }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="display-6 text-info mb-2">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <h5 class="card-title text-muted">Bugün Çalışacak</h5>
+              <h3 class="text-info mb-0" id="today-count">-</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks Grid -->
+      {% if tasks %}
+      <div class="row">
+        {% for task in tasks %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="card task-card border-0 shadow-sm h-100" data-task-id="{{ task.id }}">
+            <div class="card-header bg-gradient-success text-white border-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                  <i class="fas fa-clock me-2"></i>{{ task.name }}
+                </h5>
+                <div class="dropdown">
+                  <button class="btn btn-link text-white p-0" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item run-task-btn" href="#" data-task-id="{{ task.id }}" data-task-name="{{ task.name }}">
+                      <i class="fas fa-play me-2"></i>Şimdi Çalıştır
+                    </a></li>
+                    <li><a class="dropdown-item" href="/scheduler/edit/{{ task.id }}">
+                      <i class="fas fa-edit me-2"></i>Düzenle
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger delete-task-btn" href="#" data-task-id="{{ task.id }}" data-task-name="{{ task.name }}">
+                      <i class="fas fa-trash me-2"></i>Sil
+                    </a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="task-info">
+                <div class="info-item mb-3">
+                  <div class="info-label text-muted small">
+                    <i class="fas fa-server me-1"></i>Sunucu
+                  </div>
+                  <div class="info-value">
+                    <span class="badge bg-primary">{{ task.server.name }}</span>
+                  </div>
+                </div>
+                
+                <div class="info-item mb-3">
+                  <div class="info-label text-muted small">
+                    <i class="fas fa-file-code me-1"></i>Script
+                  </div>
+                  <div class="info-value">
+                    <code class="bg-light px-2 py-1 rounded">{{ task.script.name }}</code>
+                  </div>
+                </div>
+                
+                <div class="info-item mb-3">
+                  <div class="info-label text-muted small">
+                    <i class="fas fa-calendar me-1"></i>Zamanlama
+                  </div>
+                  <div class="info-value">
+                    <small><code class="bg-light px-2 py-1 rounded">{{ task.cron_expression }}</code></small>
+                  </div>
+                </div>
+                
+                <div class="info-item mb-3">
+                  <div class="info-label text-muted small">
+                    <i class="fas fa-calendar-check me-1"></i>Sonraki Çalışma
+                  </div>
+                  <div class="info-value">
+                    {% if task.next_run %}
+                      <span class="text-primary fw-bold">{{ task.next_run.strftime('%d.%m.%Y %H:%M') }}</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              
+              <hr class="my-3">
+              
+              <!-- Task Status -->
+              <div class="task-status text-center">
+                <div class="status-indicator mb-3" id="status-indicator-{{ task.id }}">
+                  {% if task.is_active %}
+                    <div class="status-dot status-success"></div>
+                    <span class="status-text text-success">Aktif</span>
+                  {% else %}
+                    <div class="status-dot status-secondary"></div>
+                    <span class="status-text text-secondary">Pasif</span>
+                  {% endif %}
+                </div>
+                <div class="btn-group w-100" role="group">
+                  <button class="btn btn-outline-success btn-sm run-task-btn" data-task-id="{{ task.id }}" data-task-name="{{ task.name }}">
+                    <i class="fas fa-play me-1"></i>Çalıştır
+                  </button>
+                  <a href="/scheduler/edit/{{ task.id }}" class="btn btn-outline-warning btn-sm">
+                    <i class="fas fa-edit me-1"></i>Düzenle
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <!-- Empty State -->
+      <div class="text-center py-5">
+        <div class="empty-state">
+          <div class="empty-icon mb-4">
+            <i class="fas fa-clock fa-4x text-muted"></i>
+          </div>
+          <h3 class="text-muted mb-3">Henüz Zamanlanmış Görev Yok</h3>
+          <p class="text-muted mb-4">İlk zamanlanmış görevinizi ekleyerek otomatik script çalıştırmaya başlayın.</p>
+          <a href="/scheduler/add" class="btn btn-success btn-lg">
+            <i class="fas fa-plus me-2"></i>İlk Görevi Ekle
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.task-card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.task-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.bg-gradient-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.info-item {
+  transition: all 0.2s ease;
+}
+
+.info-item:hover {
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  padding: 8px;
+  margin: -8px;
+}
+
+.info-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-size: 0.95rem;
+}
+
+.task-status {
+  padding: 15px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-success {
+  background: #28a745;
+  animation: pulse 2s infinite;
+}
+
+.status-secondary {
+  background: #6c757d;
+  animation: pulse 2s infinite;
+}
+
+.status-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.empty-state {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.empty-icon {
+  opacity: 0.5;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.card-header {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.btn-link {
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  text-decoration: none;
+}
+
+.dropdown-menu {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: none;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.dropdown-item.text-danger:hover {
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.btn-group .btn {
+  border-radius: 6px !important;
+}
+
+.btn-group .btn:first-child {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.btn-group .btn:last-child {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+</style>
+
+<script>
+function checkScheduledTasks() {
+    const button = document.getElementById('check-tasks-btn');
+    const originalText = button.innerHTML;
+    
+    // Loading durumu
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kontrol ediliyor...';
+    button.disabled = true;
+    
+    fetch('/scheduler/check_tasks')
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Sayfayı yenile
+            location.reload();
+        } else {
+            alert('Görev kontrolü sırasında hata oluştu!');
+        }
+    })
+    .catch(error => {
+        alert('Görev kontrolü sırasında hata oluştu!');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function runTask(taskId, taskName) {
+    if (confirm(`${taskName} görevini şimdi çalıştırmak istediğinize emin misiniz?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/scheduler/run/${taskId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deleteTask(taskId, taskName) {
+    if (confirm(`${taskName} görevini silmek istediğinize emin misiniz?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/scheduler/delete/${taskId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Check tasks button
+    const checkBtn = document.getElementById('check-tasks-btn');
+    if (checkBtn) {
+        checkBtn.addEventListener('click', checkScheduledTasks);
+    }
+    // Run task buttons
+    document.querySelectorAll('.run-task-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const taskId = this.dataset.taskId;
+            const taskName = this.dataset.taskName;
+            runTask(taskId, taskName);
+        });
+    });
+    // Delete task buttons
+    document.querySelectorAll('.delete-task-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const taskId = this.dataset.taskId;
+            const taskName = this.dataset.taskName;
+            deleteTask(taskId, taskName);
+        });
+    });
+    // Calculate today's tasks count
+    calculateTodayTasks();
+});
+
+function calculateTodayTasks() {
+    const today = new Date();
+    const todayStr = today.toLocaleDateString('tr-TR');
+    console.log('Bugünün tarihi:', todayStr);
+    let todayCount = 0;
+    
+    document.querySelectorAll('.task-card').forEach((card, index) => {
+        const nextRunElement = card.querySelector('.info-value .text-primary');
+        console.log(`Görev ${index + 1}:`, nextRunElement ? nextRunElement.textContent : 'Element bulunamadı');
+        
+        if (nextRunElement) {
+            // Sadece tarih kısmını al (gün.ay.yıl)
+            const datePart = nextRunElement.textContent.trim().split(' ')[0];
+            console.log(`Görev ${index + 1} tarih kısmı:`, datePart);
+            
+            if (datePart === todayStr) {
+            todayCount++;
+                console.log(`Eşleşme bulundu! Görev ${index + 1} bugün çalışacak.`);
+            }
+        }
+    });
+    
+    console.log('Toplam bugün çalışacak görev sayısı:', todayCount);
+    document.getElementById('today-count').textContent = todayCount;
+}
+
+// Her 30 saniyede bir otomatik kontrol (isteğe bağlı)
+// setInterval(checkScheduledTasks, 30000);
+</script>
+{% endblock %} 

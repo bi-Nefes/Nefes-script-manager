@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.login-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-card {
+  max-width: 400px;
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.33);
+  background: #232b3b;
+  padding: 2.5rem 2rem 2rem 2rem;
+  margin: 2rem 0;
+  position: relative;
+  color: #f3f4f6;
+}
+.login-card .login-icon {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+  color: #fff;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1.5rem auto;
+  box-shadow: 0 4px 16px rgba(6,182,212,0.13);
+}
+.login-card .form-label {
+  font-weight: 600;
+  color: #60a5fa;
+}
+.login-card .form-control {
+  border-radius: 12px;
+  border: 1px solid #334155;
+  font-size: 1.1rem;
+  padding: 0.75rem 1rem;
+  background: #1e2533;
+  color: #f3f4f6;
+}
+.login-card .form-control:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 2px rgba(6,182,212,0.13);
+  background: #232b3b;
+  color: #fff;
+}
+.login-card .btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.10);
+  transition: background 0.2s;
+  color: #fff;
+}
+.login-card .btn-primary:hover {
+  background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
+}
+.login-card .alert {
+  border-radius: 10px;
+  font-size: 1rem;
+  margin-bottom: 1.2rem;
+  background: #1e2533;
+  color: #f3f4f6;
+  border: 1px solid #334155;
+}
+.login-card .login-title {
+  font-weight: 700;
+  color: #60a5fa;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+}
+.login-card .login-desc {
+  color: #a3a3a3;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+.login-features .feature-label {
+  color: #a3a3a3;
+}
+.animate__animated.animate__fadeOutUp {
+  animation: fadeOutUp 0.9s both;
+}
+@keyframes fadeOutUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+</style>
+<div class="login-bg">
+  <div class="login-card">
+    <div class="login-icon mb-3">
+      <i class="fas fa-user-shield"></i>
+    </div>
+    <div class="login-title">NSM NEFES SCRIPT MANAGER</div>
+    <div class="login-desc">NSM Nefes Script Manager'a hoş geldiniz. Lütfen giriş yapın.</div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle me-2"></i>{{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="POST" autocomplete="off">
+      <div class="mb-3">
+        <label for="username" class="form-label">Kullanıcı Adı</label>
+        <input type="text" class="form-control" id="username" name="username" placeholder="Kullanıcı adınızı girin" required autofocus>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Şifre</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="Şifrenizi girin" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-2">Giriş Yap</button>
+    </form>
+    <!-- Özellikler: 12 -->
+    <div class="login-features mt-4">
+      <div class="row text-center g-2">
+        <div class="col-4">
+          <div class="feature-icon mb-1"><i class="fas fa-shield-alt text-success"></i></div>
+          <div class="feature-label small">Güvenli SSH</div>
+        </div>
+        <div class="col-4">
+          <div class="feature-icon mb-1"><i class="fas fa-clock text-info"></i></div>
+          <div class="feature-label small">Zamanlanmış Görev</div>
+        </div>
+        <div class="col-4">
+          <div class="feature-icon mb-1"><i class="fas fa-chart-line text-warning"></i></div>
+          <div class="feature-label small">Raporlama</div>
+        </div>
+      </div>
+    </div>
+    <!-- Captcha Placeholder: 13 -->
+    {% if captcha_required %}
+    <div class="mt-3">
+      <label class="form-label">Güvenlik Doğrulaması</label>
+      <input type="text" class="form-control mb-2" name="captcha" placeholder="Doğrulama kodunu girin" required>
+      <div class="small text-muted">Çok fazla hatalı giriş yaptınız. Lütfen doğrulama kodunu girin.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<script>
+// 14: Başarılı girişte hoş geldiniz animasyonu
+if (window.location.search.includes('login_success')) {
+  document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
+  setTimeout(function() {
+    window.location.href = '/';
+  }, 900);
+}
+</script>
+{% endblock %} 

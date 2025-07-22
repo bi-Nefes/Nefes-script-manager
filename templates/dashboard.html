@@ -1,0 +1,506 @@
+{% extends 'base.html' %}
+{% block title %}Script Manager - Ana Sayfa{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <!-- Welcome Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%);">
+        <div class="card-body text-center py-5">
+          <div class="welcome-icon mb-4">
+            <i class="fas fa-rocket fa-4x text-white opacity-75"></i>
+          </div>
+          <h1 class="display-6 mb-3 text-white fw-bold">Hoşgeldiniz, {{ current_user.username }}!</h1>
+          <p class="lead mb-0 text-white opacity-90">Script Manager ile sunucularınızı kolayca yönetin</p>
+          <div class="mt-4">
+            <span class="badge bg-white text-primary px-3 py-2 me-2">
+              <i class="fas fa-clock me-1"></i>{{ current_time }}
+            </span>
+            <span class="badge bg-white text-primary px-3 py-2">
+              <i class="fas fa-user me-1"></i>{{ current_user.role_display_name }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-5">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <a href="{{ url_for('servers') }}" class="text-decoration-none">
+      <div class="card border-0 shadow-sm h-100 hover-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h6 class="text-muted text-uppercase fw-semibold mb-2">Toplam Sunucu</h6>
+              <h2 class="mb-0 fw-bold text-primary">{{ servers|length if servers else 0 }}</h2>
+              </div>
+            <div class="stat-icon">
+              <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                <i class="fas fa-server fa-2x text-primary"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <a href="{{ url_for('scripts') }}" class="text-decoration-none">
+      <div class="card border-0 shadow-sm h-100 hover-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h6 class="text-muted text-uppercase fw-semibold mb-2">Toplam Script</h6>
+              <h2 class="mb-0 fw-bold text-success">{{ scripts|length if scripts else 0 }}</h2>
+              </div>
+            <div class="stat-icon">
+              <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                <i class="fas fa-code fa-2x text-success"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <a href="{{ url_for('scheduler') }}" class="text-decoration-none">
+      <div class="card border-0 shadow-sm h-100 hover-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h6 class="text-muted text-uppercase fw-semibold mb-2">Aktif Görev</h6>
+              <h2 class="mb-0 fw-bold text-info">{{ tasks|length if tasks else 0 }}</h2>
+              </div>
+            <div class="stat-icon">
+              <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                <i class="fas fa-clock fa-2x text-info"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <a href="{{ url_for('logs') }}" class="text-decoration-none">
+      <div class="card border-0 shadow-sm h-100 hover-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h6 class="text-muted text-uppercase fw-semibold mb-2">Toplam Log</h6>
+              <h2 class="mb-0 fw-bold text-warning">{{ logs|length if logs else 0 }}</h2>
+              </div>
+            <div class="stat-icon">
+              <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                <i class="fas fa-list fa-2x text-warning"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Quick Access Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+              <i class="fas fa-star me-2 text-warning"></i>Hızlı Erişim
+            </h5>
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <!-- Sekmeli Geçiş -->
+          <div class="quick-access-tabs mb-3">
+            <ul class="nav nav-pills">
+              <li class="nav-item">
+                <a class="nav-link active" id="fav-tab" data-bs-toggle="pill" href="#favorites-section">
+                  <i class="fas fa-heart"></i> Favoriler
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="recent-tab" data-bs-toggle="pill" href="#recent-section">
+                  <i class="fas fa-history"></i> Son Kullanılanlar
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="popular-tab" data-bs-toggle="pill" href="#popular-section">
+                  <i class="fas fa-fire"></i> Popüler
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="tab-content">
+            <!-- Favoriler -->
+            <div class="tab-pane fade show active" id="favorites-section">
+            {% if current_user.favorite_scripts %}
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                {% for script in current_user.favorite_scripts[:8] %}
+                  <div class="col">
+                    <div class="card border-0 shadow-sm h-100 script-card hover-card">
+                      <div class="card-body p-3 d-flex flex-column">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                          <h6 class="card-title mb-0 fw-semibold text-truncate">{{ script.name }}</h6>
+                          <span class="badge bg-primary">{{ script.script_type }}</span>
+                      </div>
+                        <p class="card-text small text-muted mb-2 flex-grow-1">{{ script.description[:60] }}{% if script.description|length > 60 %}...{% endif %}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <small class="text-muted">
+                          <i class="fas fa-play me-1"></i>{{ script.usage_count }} kez
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                          <button class="btn btn-outline-primary btn-sm" onclick="quickRun('{{ script.id }}')" title="Hızlı Çalıştır">
+                            <i class="fas fa-bolt"></i>
+                          </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="showScriptDetail('{{ script.id }}')" title="Detay">
+                              <i class="fas fa-info-circle"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="removeFavorite('{{ script.id }}')" title="Favorilerden Çıkar">
+                            <i class="fas fa-heart-broken"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            {% else %}
+                <div class="text-center py-5">
+                  <div class="empty-state">
+                    <img src="https://undraw.co/api/illustrations/empty?color=primary" alt="Boş" style="max-width:120px;opacity:0.7;" class="mb-3">
+                    <h6 class="text-muted mb-2">Henüz favori script yok</h6>
+                    <p class="text-muted mb-3">Scriptler sayfasından favori scriptlerinizi ekleyin</p>
+                    <a href="/scripts" class="btn btn-primary btn-sm">
+                      <i class="fas fa-plus me-1"></i>Script Ekle
+                    </a>
+                  </div>
+              </div>
+            {% endif %}
+          </div>
+            <!-- Son Kullanılanlar -->
+            <div class="tab-pane fade" id="recent-section">
+            {% if recent_scripts %}
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                {% for script in recent_scripts[:8] %}
+                  <div class="col">
+                    <div class="card border-0 shadow-sm h-100 script-card hover-card">
+                      <div class="card-body p-3 d-flex flex-column">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                          <h6 class="card-title mb-0 fw-semibold text-truncate">{{ script.name }}</h6>
+                          <span class="badge bg-success">{{ script.script_type }}</span>
+                      </div>
+                        <p class="card-text small text-muted mb-2 flex-grow-1">{{ script.description[:60] }}{% if script.description|length > 60 %}...{% endif %}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <small class="text-muted">
+                          <i class="fas fa-clock me-1"></i>{{ script.last_used|time_ago }}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                          <button class="btn btn-outline-success btn-sm" onclick="quickRun('{{ script.id }}')" title="Hızlı Çalıştır">
+                            <i class="fas fa-bolt"></i>
+                          </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="showScriptDetail('{{ script.id }}')" title="Detay">
+                              <i class="fas fa-info-circle"></i>
+                          </button>
+                          <button class="btn btn-outline-primary btn-sm" onclick="addToFavorites('{{ script.id }}')" title="Favorilere Ekle">
+                            <i class="fas fa-heart"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            {% else %}
+                <div class="text-center py-5">
+                  <div class="empty-state">
+                    <img src="https://undraw.co/api/illustrations/empty?color=success" alt="Boş" style="max-width:120px;opacity:0.7;" class="mb-3">
+                    <h6 class="text-muted mb-2">Henüz son kullanılan script yok</h6>
+                    <p class="text-muted mb-3">Scriptleri çalıştırdıkça burada göreceksiniz</p>
+                  </div>
+              </div>
+            {% endif %}
+          </div>
+            <!-- Popüler -->
+            <div class="tab-pane fade" id="popular-section">
+            {% if popular_scripts %}
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                {% for script in popular_scripts[:8] %}
+                  <div class="col">
+                    <div class="card border-0 shadow-sm h-100 script-card hover-card">
+                      <div class="card-body p-3 d-flex flex-column">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                          <h6 class="card-title mb-0 fw-semibold text-truncate">{{ script.name }}</h6>
+                          <span class="badge bg-info">{{ script.script_type }}</span>
+                      </div>
+                        <p class="card-text small text-muted mb-2 flex-grow-1">{{ script.description[:60] }}{% if script.description|length > 60 %}...{% endif %}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <small class="text-muted">
+                          <i class="fas fa-fire me-1"></i>{{ script.usage_count }} kez
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                          <button class="btn btn-outline-info btn-sm" onclick="quickRun('{{ script.id }}')" title="Hızlı Çalıştır">
+                            <i class="fas fa-bolt"></i>
+                          </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="showScriptDetail('{{ script.id }}')" title="Detay">
+                              <i class="fas fa-info-circle"></i>
+                          </button>
+                          <button class="btn btn-outline-primary btn-sm" onclick="addToFavorites('{{ script.id }}')" title="Favorilere Ekle">
+                            <i class="fas fa-heart"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            {% else %}
+                <div class="text-center py-5">
+                  <div class="empty-state">
+                    <img src="https://undraw.co/api/illustrations/empty?color=info" alt="Boş" style="max-width:120px;opacity:0.7;" class="mb-3">
+                    <h6 class="text-muted mb-2">Henüz popüler script yok</h6>
+                    <p class="text-muted mb-3">Scriptler daha fazla kullanıldıkça burada göreceksiniz</p>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activities -->
+  <div class="row">
+    <div class="col-lg-8 mb-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="fas fa-history me-2 text-primary"></i>Son Aktiviteler
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% if recent_logs %}
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="border-0 px-4 py-3">Tarih</th>
+                    <th class="border-0 px-4 py-3">Sunucu</th>
+                    <th class="border-0 px-4 py-3">Script</th>
+                    <th class="border-0 px-4 py-3">Zaman</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for log in recent_logs[:5] %}
+                  <tr>
+                    <td class="px-4 py-3">
+                      <div class="d-flex flex-column">
+                        <small class="text-muted">{{ (log.timestamp + timedelta(hours=3)).strftime('%d.%m.%Y') }}</small>
+                        <strong>{{ (log.timestamp + timedelta(hours=3)).strftime('%H:%M') }}</strong>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="badge bg-primary">{{ log.server.name if log.server else '-' }}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <code class="text-success">{{ log.script.name if log.script else '-' }}</code>
+                    </td>
+                    <td class="px-4 py-3">
+                      <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>{{ log.timestamp|time_ago }}
+                      </small>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="text-center py-3 border-top">
+              <a href="/logs" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-list me-1"></i>Tüm Kayıtları Gör
+              </a>
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <div class="empty-state">
+              <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted mb-2">Henüz aktivite yok</h6>
+                <p class="text-muted mb-3">Script çalıştırdığınızda aktiviteler burada görünecek</p>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="fas fa-tachometer-alt me-2 text-success"></i>Sistem Durumu
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <div class="system-status">
+            <div class="status-item d-flex align-items-center mb-3">
+              <div class="status-icon me-3">
+                <i class="fas fa-server text-primary"></i>
+            </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-semibold">Sunucu Bağlantıları</h6>
+                <small class="text-muted">{{ servers|length }} aktif sunucu</small>
+            </div>
+              <div class="status-indicator">
+                <span class="badge bg-success">Aktif</span>
+          </div>
+            </div>
+            
+            <div class="status-item d-flex align-items-center mb-3">
+              <div class="status-icon me-3">
+                <i class="fas fa-clock text-warning"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-semibold">Zamanlayıcı</h6>
+                <small class="text-muted">{{ tasks|length }} aktif görev</small>
+            </div>
+              <div class="status-indicator">
+                <span class="badge bg-success">Çalışıyor</span>
+          </div>
+            </div>
+            
+            <div class="status-item d-flex align-items-center mb-3">
+              <div class="status-icon me-3">
+                <i class="fas fa-database text-info"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-semibold">Veritabanı</h6>
+                <small class="text-muted">MySQL bağlantısı</small>
+            </div>
+              <div class="status-indicator">
+                <span class="badge bg-success">Bağlı</span>
+          </div>
+            </div>
+            
+            <div class="status-item d-flex align-items-center">
+              <div class="status-icon me-3">
+                <i class="fas fa-shield-alt text-success"></i>
+            </div>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-semibold">Güvenlik</h6>
+                <small class="text-muted">Kimlik doğrulama aktif</small>
+          </div>
+              <div class="status-indicator">
+                <span class="badge bg-success">Güvenli</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.welcome-icon {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+}
+  40% {
+    transform: translateY(-10px);
+}
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.stat-icon {
+  flex-shrink: 0;
+  }
+
+.script-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+      }
+      
+.script-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.status-item {
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  }
+  
+.status-item:hover {
+  background: var(--bg-secondary);
+}
+
+.status-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.empty-state {
+  max-width: 300px;
+  margin: 0 auto;
+    }
+
+.empty-state i {
+  opacity: 0.5;
+}
+
+.table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.card-header {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.btn-group .btn {
+  border-radius: var(--radius-md) !important;
+}
+
+.btn-group .btn:first-child {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.btn-group .btn:last-child {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+</style>
+
+{% endblock %} 

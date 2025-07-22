@@ -1,0 +1,381 @@
+{% extends 'base.html' %}
+{% block title %}Script Manager - Kayıtlar{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <!-- Header Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="display-6 mb-2 fw-bold">
+            <i class="fas fa-list me-3 text-primary"></i>Kayıtlar
+          </h1>
+          <p class="lead text-muted mb-0">Script çalıştırma geçmişinizi görüntüleyin</p>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary" onclick="exportLogs()">
+            <i class="fas fa-download me-2"></i>Dışa Aktar
+          </button>
+          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAllModal">
+            <i class="fas fa-trash me-2"></i>Toplu Sil
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <form method="GET" class="row g-3">
+            <div class="col-md-4">
+              <label for="server_id" class="form-label fw-semibold">
+                <i class="fas fa-server me-2"></i>Sunucu Filtresi
+                  </label>
+              <select class="form-select" id="server_id" name="server_id">
+                    <option value="">Tüm Sunucular</option>
+                    {% for server in servers %}
+                <option value="{{ server.id }}" {{ 'selected' if selected_server == server.id }}>
+                  {{ server.name }} ({{ server.host }})
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+            <div class="col-md-4">
+              <label for="script_id" class="form-label fw-semibold">
+                <i class="fas fa-code me-2"></i>Script Filtresi
+                  </label>
+              <select class="form-select" id="script_id" name="script_id">
+                    <option value="">Tüm Scriptler</option>
+                    {% for script in scripts %}
+                <option value="{{ script.id }}" {{ 'selected' if selected_script == script.id }}>
+                      {{ script.name }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="d-flex gap-2 w-100">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                  <i class="fas fa-search me-2"></i>Filtrele
+                  </button>
+                <a href="/logs" class="btn btn-outline-secondary">
+                  <i class="fas fa-times me-2"></i>Temizle
+                  </a>
+              </div>
+                </div>
+              </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-4">
+    <div class="col-md-4 mb-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 text-center">
+          <div class="stat-icon mb-3">
+            <div class="bg-primary bg-opacity-10 rounded-circle p-3 mx-auto" style="width: fit-content;">
+              <i class="fas fa-list fa-2x text-primary"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold text-primary mb-1">{{ logs|length }}</h3>
+          <p class="text-muted mb-0">Toplam Kayıt</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 text-center">
+          <div class="stat-icon mb-3">
+            <div class="bg-info bg-opacity-10 rounded-circle p-3 mx-auto" style="width: fit-content;">
+              <i class="fas fa-server fa-2x text-info"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold text-info mb-1">{{ logs|map(attribute='server_id')|unique|list|length }}</h3>
+          <p class="text-muted mb-0">Kullanılan Sunucu</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 text-center">
+          <div class="stat-icon mb-3">
+            <div class="bg-success bg-opacity-10 rounded-circle p-3 mx-auto" style="width: fit-content;">
+              <i class="fas fa-code fa-2x text-success"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold text-success mb-1">{{ logs|map(attribute='script_id')|unique|list|length }}</h3>
+          <p class="text-muted mb-0">Kullanılan Script</p>
+        </div>
+      </div>
+            </div>
+          </div>
+
+  <!-- Logs Table -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+              <i class="fas fa-table me-2 text-primary"></i>Çalışma Kayıtları
+            </h5>
+            <div class="d-flex gap-2">
+              <span class="badge bg-primary">{{ logs|length }} kayıt</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          {% if logs %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="border-0 px-4 py-3">
+                    <i class="fas fa-calendar me-1"></i>Tarih/Saat
+                  </th>
+                  <th class="border-0 px-4 py-3">
+                    <i class="fas fa-server me-1"></i>Sunucu
+                  </th>
+                  <th class="border-0 px-4 py-3">
+                    <i class="fas fa-code me-1"></i>Script
+                  </th>
+                  <th class="border-0 px-4 py-3">
+                    <i class="fas fa-cogs me-1"></i>İşlemler
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for log in logs %}
+                <tr class="log-row">
+                  <td class="px-4 py-3">
+                    <div class="d-flex flex-column">
+                      <small class="text-muted">{{ (log.timestamp + timedelta(hours=3)).strftime('%d.%m.%Y') }}</small>
+                      <strong>{{ (log.timestamp + timedelta(hours=3)).strftime('%H:%M:%S') }}</strong>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    {% if log.server %}
+                      <span class="badge bg-primary">{{ log.server.name }}</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="px-4 py-3">
+                    {% if log.script %}
+                      <code class="text-success">{{ log.script.name }}</code>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-danger" type="button" 
+                              data-bs-toggle="modal" data-bs-target="#deleteModal{{ log.id }}"
+                              title="Sil">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <div class="empty-state">
+              <i class="fas fa-inbox fa-4x text-muted mb-4"></i>
+              <h4 class="text-muted mb-3">Henüz kayıt yok</h4>
+              <p class="text-muted mb-4">Script çalıştırdığınızda kayıtlar burada görünecek</p>
+              <a href="/run" class="btn btn-primary">
+                <i class="fas fa-play me-2"></i>İlk Scripti Çalıştır
+              </a>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modals -->
+{% for log in logs %}
+<div class="modal fade" id="deleteModal{{ log.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ log.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel{{ log.id }}">
+          <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Kayıt Sil
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bu kaydı silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-info">
+          <strong>Sunucu:</strong> {{ log.server.name if log.server else 'Bilinmiyor' }}<br>
+          <strong>Script:</strong> {{ log.script.name if log.script else 'Bilinmiyor' }}<br>
+          <strong>Tarih:</strong> {{ (log.timestamp + timedelta(hours=3)).strftime('%d.%m.%Y %H:%M:%S') }}
+        </div>
+        <p class="text-danger">
+          <i class="fas fa-warning me-1"></i>Bu işlem geri alınamaz!
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>İptal
+        </button>
+        <form method="post" action="/logs/delete/{{ log.id }}" style="display: inline;">
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash me-1"></i>Sil
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Bulk Delete Modal -->
+<div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteAllModalLabel">
+          <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Toplu Silme
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Filtrelenmiş tüm kayıtları silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-warning">
+          <strong>Silinecek kayıt sayısı:</strong> {{ logs|length }}<br>
+          {% if selected_server %}
+            <strong>Sunucu filtresi:</strong> {{ servers|selectattr('id', 'equalto', selected_server)|first|attr('name') }}<br>
+          {% endif %}
+          {% if selected_script %}
+            <strong>Script filtresi:</strong> {{ scripts|selectattr('id', 'equalto', selected_script)|first|attr('name') }}<br>
+          {% endif %}
+        </div>
+        <p class="text-danger">
+          <i class="fas fa-warning me-1"></i>Bu işlem geri alınamaz!
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>İptal
+        </button>
+        <form method="post" action="/logs/delete_all" style="display: inline;">
+          {% if selected_server %}
+            <input type="hidden" name="server_id" value="{{ selected_server }}">
+          {% endif %}
+          {% if selected_script %}
+            <input type="hidden" name="script_id" value="{{ selected_script }}">
+          {% endif %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash me-1"></i>Tümünü Sil
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.log-row {
+  transition: all 0.2s ease;
+}
+
+.log-row:hover {
+  background: var(--bg-secondary);
+  transform: scale(1.01);
+}
+
+.empty-state {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.empty-state i {
+  opacity: 0.5;
+}
+
+.stat-icon {
+  flex-shrink: 0;
+}
+
+.table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.card-header {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.btn-group .btn {
+  border-radius: var(--radius-md) !important;
+}
+
+.btn-group .btn:first-child {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.btn-group .btn:last-child {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .btn-group {
+    flex-direction: column;
+  }
+}
+</style>
+
+<script>
+function exportLogs() {
+  // CSV export functionality
+  const table = document.querySelector('table');
+  const rows = Array.from(table.querySelectorAll('tr'));
+  
+  let csv = 'Tarih,Saat,Sunucu,Script\n';
+  
+  rows.slice(1).forEach(row => {
+    const cells = Array.from(row.querySelectorAll('td'));
+    if (cells.length >= 3) {
+      const date = cells[0].textContent.trim();
+      const server = cells[1].textContent.trim();
+      const script = cells[2].textContent.trim();
+      csv += `"${date}","${server}","${script}"\n`;
+    }
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `logs_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+</script>
+
+{% endblock %} 

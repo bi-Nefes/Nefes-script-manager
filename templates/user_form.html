@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="fas fa-user me-2"></i>
+        {{ 'Kullanıcı Ekle' if action == 'add' else 'Kullanıcı Düzenle' }}
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" novalidate>
+        <div class="row">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label for="username" class="form-label">
+                <i class="fas fa-user me-1"></i>Kullanıcı Adı
+              </label>
+              <input type="text" class="form-control" id="username" name="username" required 
+                     value="{{ user.username if user else '' }}" 
+                     placeholder="Örn: admin">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="role" class="form-label">
+                <i class="fas fa-user-tag me-1"></i>Rol
+              </label>
+              <select class="form-select" id="role" name="role" required>
+                <option value="admin" {{ 'selected' if user and user.role == 'admin' else '' }}>Yönetici</option>
+                <option value="manager" {{ 'selected' if user and user.role == 'manager' else '' }}>Müdür</option>
+                <option value="user" {{ 'selected' if user and user.role == 'user' else '' }}>Kullanıcı</option>
+                <option value="viewer" {{ 'selected' if user and user.role == 'viewer' else '' }}>Görüntüleyici</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="email" class="form-label">
+            <i class="fas fa-envelope me-1"></i>Email (isteğe bağlı)
+          </label>
+          <input type="email" class="form-control" id="email" name="email" 
+                 value="{{ user.email if user else '' }}" 
+                 placeholder="kullanici@example.com">
+        </div>
+        
+        <!-- Profil Fotoğrafı Alanı -->
+        <div class="mb-3">
+          <label for="profile_photo" class="form-label">
+            <i class="fas fa-camera me-1"></i>Profil Fotoğrafı
+          </label>
+          <input type="file" class="form-control" id="profile_photo" name="profile_photo" 
+                 accept="image/*" {{ 'required' if action == 'add' else '' }}>
+          <div class="form-text">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              JPG, PNG, GIF (max 5MB) {{ '- Mevcut fotoğrafı korumak için boş bırakın' if action == 'edit' else '' }}
+            </small>
+          </div>
+          {% if action == 'edit' and user and user.profile_photo %}
+          <div class="mt-2">
+            <small class="text-muted">
+              <i class="fas fa-image me-1"></i>Mevcut fotoğraf: 
+              <img src="{{ url_for('static', filename=user.profile_photo) }}" 
+                   class="rounded-circle" width="30" height="30" alt="Mevcut fotoğraf">
+            </small>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="mb-3">
+          <label for="password" class="form-label">
+            <i class="fas fa-lock me-1"></i>Şifre {{ '(Boş bırakılırsa değişmez)' if action == 'edit' else '' }}
+          </label>
+          <input type="password" class="form-control" id="password" name="password" 
+                 {{ 'required' if action == 'add' else '' }}
+                 placeholder="{{ 'Mevcut şifreyi korumak için boş bırakın' if action == 'edit' else 'Güçlü bir şifre girin' }}">
+          <div class="form-text">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              En az 6 karakter olmalıdır
+            </small>
+          </div>
+        </div>
+        
+        {% if action == 'edit' %}
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                   {{ 'checked' if user and user.is_active else '' }}>
+            <label class="form-check-label" for="is_active">
+              <i class="fas fa-toggle-on me-1"></i>Hesap Aktif
+            </label>
+          </div>
+          <div class="form-text">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              Pasif hesaplar giriş yapamaz
+            </small>
+          </div>
+        </div>
+        {% endif %}
+        
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-save me-2"></i>Kaydet
+          </button>
+          <a href="/users" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>İptal
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Rol Açıklamaları -->
+  <div class="card mt-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0">
+        <i class="fas fa-info-circle me-2"></i>Rol Açıklamaları
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <h6><span class="badge bg-danger me-2">Yönetici</span></h6>
+            <p class="text-muted small mb-0">
+              Tüm yetkilere sahip. Kullanıcı yönetimi, sistem ayarları ve tüm işlemleri yapabilir.
+            </p>
+          </div>
+          <div class="mb-3">
+            <h6><span class="badge bg-warning me-2">Müdür</span></h6>
+            <p class="text-muted small mb-0">
+              Sunucu ve script yönetimi, zamanlanmış görevler ve log silme yetkisi.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <h6><span class="badge bg-primary me-2">Kullanıcı</span></h6>
+            <p class="text-muted small mb-0">
+              Script çalıştırma ve zamanlanmış görev oluşturma yetkisi.
+            </p>
+          </div>
+          <div class="mb-3">
+            <h6><span class="badge bg-secondary me-2">Görüntüleyici</span></h6>
+            <p class="text-muted small mb-0">
+              Sadece görüntüleme yetkisi. Hiçbir değişiklik yapamaz.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

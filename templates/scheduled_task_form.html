@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 700px;">
+  <div class="card shadow">
+    <div class="card-header bg-success text-white">
+      <h3 class="mb-0">
+        <i class="fas fa-clock me-2"></i>{{ 'Zamanlanmış Görev Ekle' if action == 'add' else 'Zamanlanmış Görev Düzenle' }}
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" novalidate>
+        <div class="row">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label for="name" class="form-label">
+                <i class="fas fa-tag me-1"></i>Görev Adı
+              </label>
+              <input type="text" class="form-control" id="name" name="name" required 
+                     value="{{ task.name if task else '' }}" 
+                     placeholder="Örn: Günlük Yedekleme">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                       {% if not task or task.is_active %}checked{% endif %}>
+                <label class="form-check-label" for="is_active">
+                  <i class="fas fa-toggle-on me-1"></i>Aktif
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="server_id" class="form-label">
+                <i class="fas fa-server me-1"></i>Sunucu
+              </label>
+              <select class="form-select" id="server_id" name="server_id" required>
+                <option value="">Sunucu seçiniz...</option>
+                {% for server in servers %}
+                <option value="{{ server.id }}" {% if task and task.server_id == server.id %}selected{% endif %}>
+                  {{ server.name }} ({{ server.host }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="script_id" class="form-label">
+                <i class="fas fa-code me-1"></i>Script
+              </label>
+              <select class="form-select" id="script_id" name="script_id" required>
+                <option value="">Script seçiniz...</option>
+                {% for script in scripts %}
+                <option value="{{ script.id }}" {% if task and task.script_id == script.id %}selected{% endif %}>
+                  {{ script.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Zamanlama Seçenekleri -->
+        <div class="card mb-3">
+          <div class="card-header bg-light">
+            <h6 class="mb-0">
+              <i class="fas fa-calendar-alt me-1"></i>Zamanlama Ayarları
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <label class="form-label">Sıklık</label>
+                <select class="form-select" id="frequency" onchange="updateCronExpression()">
+                  <option value="daily">Her gün</option>
+                  <option value="weekly">Her hafta</option>
+                  <option value="monthly">Her ay</option>
+                  <option value="hourly">Her saat</option>
+                  <option value="custom">Özel</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Gün</label>
+                <select class="form-select" id="day" onchange="updateCronExpression()" style="display:none;">
+                  <option value="1">Pazartesi</option>
+                  <option value="2">Salı</option>
+                  <option value="3">Çarşamba</option>
+                  <option value="4">Perşembe</option>
+                  <option value="5">Cuma</option>
+                  <option value="6">Cumartesi</option>
+                  <option value="0">Pazar</option>
+                </select>
+                <select class="form-select" id="month_day" onchange="updateCronExpression()" style="display:none;">
+                  {% for i in range(1, 32) %}
+                  <option value="{{ i }}">{{ i }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Saat</label>
+                <select class="form-select" id="hour" onchange="updateCronExpression()">
+                  {% for i in range(24) %}
+                  <option value="{{ i }}"
+                    {% if task %}
+                      {% set cron_parts = task.cron_expression.split(' ') %}
+                      {% if cron_parts|length > 1 and cron_parts[1]|int == i %}selected{% endif %}
+                    {% else %}
+                      {% if i == 9 %}selected{% endif %}
+                    {% endif %}
+                  >{{ i }}:00</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Dakika</label>
+                <select class="form-select" id="minute" onchange="updateCronExpression()">
+                  {% for i in range(60) %}
+                  <option value="{{ i }}"
+                    {% if task %}
+                      {% set cron_parts = task.cron_expression.split(' ') %}
+                      {% if cron_parts|length > 0 and cron_parts[0]|int == i %}selected{% endif %}
+                    {% else %}
+                      {% if i == 0 %}selected{% endif %}
+                    {% endif %}
+                  >{{ i }} dakika</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="cron_expression" class="form-label">
+            <i class="fas fa-cog me-1"></i>Cron İfadesi
+          </label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="cron_expression" name="cron_expression" value="{{ task.cron_expression if task else '' }}" required placeholder="Örn: */5 * * * *">
+            <span class="input-group-text">
+              <i class="fas fa-info-circle" title="Otomatik oluşturulur"></i>
+            </span>
+          </div>
+          <div class="form-text" id="cron_description">
+            <i class="fas fa-clock me-1"></i>Her gün saat 9:00'da çalışacak
+          </div>
+        </div>
+        
+        <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-save me-2"></i>Kaydet
+          </button>
+          <a href="/scheduler" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>İptal
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateCronExpression() {
+    const frequency = document.getElementById('frequency').value;
+    const day = document.getElementById('day').value;
+    const monthDay = document.getElementById('month_day').value;
+    const hour = document.getElementById('hour').value;
+    const minute = document.getElementById('minute').value;
+    const cronField = document.getElementById('cron_expression');
+    const description = document.getElementById('cron_description');
+    
+    let cronExpression = '';
+    let descriptionText = '';
+    
+    switch(frequency) {
+        case 'daily':
+            cronExpression = `${minute} ${hour} * * *`;
+            descriptionText = `Her gün saat ${hour}:${minute.toString().padStart(2, '0')}'da çalışacak`;
+            break;
+        case 'weekly':
+            cronExpression = `${minute} ${hour} * * ${day}`;
+            const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+            descriptionText = `Her ${days[day]} saat ${hour}:${minute.toString().padStart(2, '0')}'da çalışacak`;
+            break;
+        case 'monthly':
+            cronExpression = `${minute} ${hour} ${monthDay} * *`;
+            descriptionText = `Her ayın ${monthDay}'i saat ${hour}:${minute.toString().padStart(2, '0')}'da çalışacak`;
+            break;
+        case 'hourly':
+            cronExpression = `${minute} * * * *`;
+            descriptionText = `Her saat başı ${minute}. dakikada çalışacak`;
+            break;
+        case 'custom':
+            cronExpression = `${minute} ${hour} * * *`;
+            descriptionText = `Her gün saat ${hour}:${minute.toString().padStart(2, '0')}'da çalışacak (özel)`;
+            break;
+    }
+    
+    cronField.value = cronExpression;
+    description.innerHTML = `<i class="fas fa-clock me-1"></i>${descriptionText}`;
+}
+
+// Sayfa yüklendiğinde cron ifadesini oluştur
+document.addEventListener('DOMContentLoaded', function() {
+    updateCronExpression();
+    
+    // Frequency değiştiğinde gün/ay günü seçeneklerini göster/gizle
+    document.getElementById('frequency').addEventListener('change', function() {
+        const daySelect = document.getElementById('day');
+        const monthDaySelect = document.getElementById('month_day');
+        
+        if (this.value === 'weekly') {
+            daySelect.style.display = 'block';
+            monthDaySelect.style.display = 'none';
+        } else if (this.value === 'monthly') {
+            daySelect.style.display = 'none';
+            monthDaySelect.style.display = 'block';
+        } else {
+            daySelect.style.display = 'none';
+            monthDaySelect.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %} 
