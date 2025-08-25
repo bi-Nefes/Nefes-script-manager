@@ -1,0 +1,4 @@
+2025-07-26 02:06:50,869 - INFO - Zamanlayýcý worker baþlatýldý
+2025-07-26 02:06:55,000 - ERROR - Görev kontrolü sýrasýnda hata: (pymysql.err.OperationalError) (2003, "Can't connect to MySQL server on 'localhost' ([WinError 10061] Hedef makine etkin olarak reddettiðinden baðlantý kurulamadý)")
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-07-26 02:07:02,762 - INFO - Worker durduruldu

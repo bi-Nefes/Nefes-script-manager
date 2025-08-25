@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-exchange-alt me-2"></i>Config Karşılaştırma
+          </h4>
+        </div>
+        <div class="card-body">
+          <!-- Backup Bilgileri -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                  <h6 class="mb-0">
+                    <i class="fas fa-file-code me-2"></i>Eski Config ({{ backup1.backup_name }})
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <p><strong>Cihaz:</strong> {{ backup1.device.name }} ({{ backup1.device.host }})</p>
+                  <p><strong>Tarih:</strong> {{ backup1.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                  <p><strong>Oluşturan:</strong> {{ backup1.user.username }}</p>
+                  <p><strong>Boyut:</strong> {{ (backup1.file_size / 1024)|round(1) }} KB</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                  <h6 class="mb-0">
+                    <i class="fas fa-file-code me-2"></i>Yeni Config ({{ backup2.backup_name }})
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <p><strong>Cihaz:</strong> {{ backup2.device.name }} ({{ backup2.device.host }})</p>
+                  <p><strong>Tarih:</strong> {{ backup2.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                  <p><strong>Oluşturan:</strong> {{ backup2.user.username }}</p>
+                  <p><strong>Boyut:</strong> {{ (backup2.file_size / 1024)|round(1) }} KB</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Diff Sonuçları -->
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <h6 class="mb-0">
+                <i class="fas fa-search me-2"></i>Değişiklikler ({{ diff_result|length }} fark)
+              </h6>
+            </div>
+            <div class="card-body">
+              {% if diff_result %}
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead class="table-dark">
+                    <tr>
+                      <th style="width: 80px;">Satır</th>
+                      <th style="width: 50%;">Eski Config</th>
+                      <th style="width: 50%;">Yeni Config</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for diff in diff_result %}
+                    <tr class="{% if diff.old_line and diff.new_line %}table-warning{% elif diff.old_line and not diff.new_line %}table-danger{% elif not diff.old_line and diff.new_line %}table-success{% endif %}">
+                      <td>
+                        <span class="badge bg-secondary">{{ diff.line_number }}</span>
+                      </td>
+                      <td>
+                        {% if diff.old_line %}
+                          <code class="text-danger">{{ diff.old_line }}</code>
+                        {% else %}
+                          <span class="text-muted">-</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if diff.new_line %}
+                          <code class="text-success">{{ diff.new_line }}</code>
+                        {% else %}
+                          <span class="text-muted">-</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Özet -->
+              <div class="row mt-4">
+                <div class="col-md-4">
+                  <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                      <i class="fas fa-edit fa-2x mb-2"></i>
+                      <h5>{{ diff_result|selectattr('old_line')|selectattr('new_line')|list|length }}</h5>
+                      <small>Değiştirilen Satır</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                      <i class="fas fa-minus fa-2x mb-2"></i>
+                      <h5>{{ diff_result|selectattr('old_line')|rejectattr('new_line')|list|length }}</h5>
+                      <small>Silinen Satır</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                      <i class="fas fa-plus fa-2x mb-2"></i>
+                      <h5>{{ diff_result|rejectattr('old_line')|selectattr('new_line')|list|length }}</h5>
+                      <small>Eklenen Satır</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {% else %}
+              <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5 class="text-success">Değişiklik Yok!</h5>
+                <p class="text-muted">İki config arasında hiçbir fark bulunamadı.</p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- İşlem Butonları -->
+          <div class="text-center mt-4">
+            <a href="/config-backups" class="btn btn-secondary me-2">
+              <i class="fas fa-arrow-left me-1"></i>Geri Dön
+            </a>
+            <a href="/config-backups/download/{{ backup1.id }}" class="btn btn-outline-primary me-2">
+              <i class="fas fa-download me-1"></i>Eski Config İndir
+            </a>
+            <a href="/config-backups/download/{{ backup2.id }}" class="btn btn-outline-success">
+              <i class="fas fa-download me-1"></i>Yeni Config İndir
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  border: none;
+  padding: 1rem 1.5rem;
+}
+
+.table-sm td, .table-sm th {
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+code {
+  background: #f8f9fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.5em 0.75em;
+}
+
+.table-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.table-danger {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.table-success {
+  background-color: rgba(25, 135, 84, 0.1);
+}
+</style>
+{% endblock %} 

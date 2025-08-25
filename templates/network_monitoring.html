@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">
+            <i class="fas fa-chart-line me-2"></i>Network Monitoring
+          </h4>
+          <div>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#deviceSelectModal">
+              <i class="fas fa-sync me-1"></i>Monitoring Topla
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Cihaz Seçimi -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label for="device_select" class="form-label">
+                <i class="fas fa-filter me-1"></i>Cihaz Seçimi
+              </label>
+              <select class="form-select" id="device_select" onchange="selectDevice(this.value)">
+                <option value="">Cihaz Seçin</option>
+                {% for device in devices %}
+                <option value="{{ device.id }}" {% if device and device.id == device.id %}selected{% endif %}>
+                  {{ device.name }} ({{ device.host }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">&nbsp;</label>
+              <div>
+                <a href="/network-monitoring" class="btn btn-outline-secondary btn-sm">
+                  <i class="fas fa-refresh me-1"></i>Temizle
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          {% if device %}
+          <!-- Cihaz Bilgileri -->
+          <div class="row mb-4">
+            <div class="col-md-3">
+              <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                  <i class="fas fa-server fa-2x mb-2"></i>
+                  <h5>{{ device.name }}</h5>
+                  <small>{{ device.host }}</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                  <i class="fas fa-clock fa-2x mb-2"></i>
+                  <h5>Son Kontrol</h5>
+                  <small>{{ device.last_monitoring_check.strftime('%H:%M') if device.last_monitoring_check else 'Hiç' }}</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                  <i class="fas fa-download fa-2x mb-2"></i>
+                  <h5>Son Backup</h5>
+                  <small>{{ device.last_config_backup.strftime('%H:%M') if device.last_config_backup else 'Hiç' }}</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                  <i class="fas fa-microchip fa-2x mb-2"></i>
+                  <h5>Cihaz Türü</h5>
+                  <small>{{ device.device_type_info.name if device.device_type_info else 'Belirtilmemiş' }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Monitoring Verileri -->
+          {% if monitoring_data %}
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Son Monitoring Verileri</h6>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <tbody>
+                        {% for data in monitoring_data[:5] %}
+                        <tr>
+                          <td>
+                            <small class="text-muted">{{ data.timestamp.strftime('%d.%m %H:%M') }}</small>
+                          </td>
+                          <td>
+                            {% if data.cpu_usage %}
+                              <span class="badge bg-{{ 'danger' if data.cpu_usage > 80 else 'warning' if data.cpu_usage > 50 else 'success' }}">
+                                CPU: {{ data.cpu_usage }}%
+                              </span>
+                            {% endif %}
+                          </td>
+                          <td>
+                            {% if data.total_interfaces %}
+                              <span class="badge bg-info">
+                                {{ data.up_interfaces }}/{{ data.total_interfaces }} Up
+                              </span>
+                            {% endif %}
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="fas fa-network-wired me-2"></i>Interface Durumları</h6>
+                </div>
+                <div class="card-body">
+                  {% if interfaces %}
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Interface</th>
+                          <th>Durum</th>
+                          <th>IP</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for interface in interfaces %}
+                        <tr>
+                          <td>
+                            <small>{{ interface.interface_name }}</small>
+                          </td>
+                          <td>
+                            <span class="badge bg-{{ 'success' if interface.status == 'up' else 'danger' if interface.status == 'down' else 'warning' }}">
+                              {{ interface.status }}
+                            </span>
+                          </td>
+                          <td>
+                            <small>{{ interface.ip_address or '-' }}</small>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% else %}
+                  <p class="text-muted text-center">Interface bilgisi yok</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i>
+            Bu cihaz için henüz monitoring verisi yok. Monitoring verilerini toplamak için "Monitoring Topla" butonunu kullanın.
+          </div>
+          {% endif %}
+          
+          <!-- Monitoring Toplama Butonu -->
+          <div class="text-center">
+            <form method="post" action="/network-monitoring/collect/{{ device.id }}" style="display: inline;">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-sync me-2"></i>Monitoring Verilerini Topla
+              </button>
+            </form>
+          </div>
+          
+          {% else %}
+          <!-- Cihaz Seçilmedi -->
+          <div class="text-center py-5">
+            <i class="fas fa-server fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Monitoring için cihaz seçin</h5>
+            <p class="text-muted">Yukarıdaki dropdown'dan bir network cihazı seçerek monitoring verilerini görüntüleyebilirsiniz.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cihaz Seçim Modalı -->
+<div class="modal fade" id="deviceSelectModal" tabindex="-1" aria-labelledby="deviceSelectModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="deviceSelectModalLabel">
+          <i class="fas fa-sync me-2"></i>Monitoring Verilerini Topla
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Monitoring verilerini toplamak istediğiniz cihazı seçin:</p>
+        <div class="list-group">
+          {% for device in devices %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1">{{ device.name }}</h6>
+                <small class="text-muted">{{ device.host }}</small>
+                {% if device.device_type_info %}
+                  <br><small class="text-info">{{ device.device_type_info.vendor }} - {{ device.device_type_info.name }}</small>
+                {% endif %}
+                {% if device.last_monitoring_check %}
+                  <br><small class="text-warning">Son kontrol: {{ device.last_monitoring_check.strftime('%d.%m.%Y %H:%M') }}</small>
+                {% endif %}
+              </div>
+              <form method="post" action="/network-monitoring/collect/{{ device.id }}" style="display: inline;">
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="fas fa-sync me-1"></i>Topla
+                </button>
+              </form>
+            </div>
+          </div>
+          {% else %}
+          <div class="list-group-item text-center text-muted">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Network cihazı bulunamadı. Önce sunucular sayfasından network cihazı ekleyin.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function selectDevice(deviceId) {
+  if (deviceId) {
+    window.location.href = `/network-monitoring?device_id=${deviceId}`;
+  } else {
+    window.location.href = '/network-monitoring';
+  }
+}
+</script>
+
+<style>
+.card {
+  border: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  border: none;
+  padding: 1rem 1.5rem;
+}
+
+.table-sm td, .table-sm th {
+  padding: 0.5rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.5em 0.75em;
+}
+
+.list-group-item {
+  border: 1px solid #dee2e6;
+  margin-bottom: 0.5rem;
+  border-radius: 0.375rem;
+}
+</style>
+{% endblock %} 

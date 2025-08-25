@@ -1,18 +1,33 @@
 {% extends 'base.html' %}
+{% block title %}Scriptler - Script Manager{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h3 class="mb-1">
-        <i class="fas fa-code me-2"></i>Scriptler
-      </h3>
-      <p class="text-muted mb-0">Sunucularda çalıştırılacak scriptleri yönetin</p>
+<div class="container-fluid py-4">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+        <div class="card-body text-white p-4">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h1 class="display-6 fw-bold mb-2">
+                <i class="fas fa-code me-3"></i>Script Yönetimi
+              </h1>
+              <p class="lead mb-0 opacity-90">
+                Sunucularda çalıştırılacak scriptleri yönetin ve organize edin
+              </p>
+            </div>
+            <div class="col-lg-4 text-end">
+              {% if current_user.has_permission('add_script') %}
+              <a href="/scripts/add" class="btn btn-light btn-lg px-4">
+                <i class="fas fa-plus me-2"></i>Script Ekle
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    {% if current_user.has_permission('add_script') %}
-    <a href="/scripts/add" class="btn btn-primary">
-      <i class="fas fa-plus me-2"></i>Script Ekle
-    </a>
-    {% endif %}
   </div>
   
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -26,16 +41,22 @@
     {% endif %}
   {% endwith %}
   
-  <div class="card shadow">
+  <div class="card border-0 shadow-lg">
+    <div class="card-header bg-transparent border-0">
+      <h5 class="mb-0 fw-bold text-primary">
+        <i class="fas fa-list me-2"></i>Script Listesi
+      </h5>
+    </div>
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
-          <thead class="table-light">
+          <thead class="bg-light">
             <tr>
               <th class="border-0">#</th>
               <th class="border-0">Ad</th>
               <th class="border-0">Tür</th>
               <th class="border-0">Komut</th>
+              <th class="border-0">Davranış</th>
               <th class="border-0">Açıklama</th>
               <th class="border-0 text-center">İşlemler</th>
             </tr>
@@ -55,6 +76,29 @@
               </td>
               <td class="align-middle">
                 <code class="text-sm">{{ script.command[:50] }}{{ '...' if script.command|length > 50 else '' }}</code>
+              </td>
+              <td class="align-middle">
+                <div class="d-flex flex-column gap-1">
+                  {% if script.wait_for_output %}
+                    <span class="badge bg-success">
+                      <i class="fas fa-hourglass-half me-1"></i>Çıktı Bekler
+                    </span>
+                  {% else %}
+                    <span class="badge bg-warning">
+                      <i class="fas fa-play me-1"></i>Sadece Başlatır
+                    </span>
+                  {% endif %}
+                  
+                  {% if script.is_long_running %}
+                    <span class="badge bg-info">
+                      <i class="fas fa-clock me-1"></i>Uzun Süren
+                    </span>
+                  {% endif %}
+                  
+                  <span class="badge bg-secondary">
+                    <i class="fas fa-stopwatch me-1"></i>{{ script.default_timeout }}s
+                  </span>
+                </div>
               </td>
               <td class="align-middle">
                 <span class="text-muted">{{ script.description or '-' }}</span>

@@ -63,6 +63,74 @@
                     placeholder="Bu script'in ne yaptığını açıklayın...">{{ script.description if script else '' }}</textarea>
         </div>
         
+        <!-- Script Davranış Ayarları -->
+        <div class="card border-info mb-3">
+          <div class="card-header bg-info text-white">
+            <h6 class="mb-0">
+              <i class="fas fa-cogs me-2"></i>Script Davranış Ayarları
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="wait_for_output" name="wait_for_output" 
+                           {{ 'checked' if script and script.wait_for_output else 'checked' }}>
+                    <label class="form-check-label" for="wait_for_output">
+                      <i class="fas fa-hourglass-half me-1"></i>Çıktı Bekle
+                    </label>
+                  </div>
+                  <small class="form-text text-muted">
+                    İşaretliyse script çıktısı beklenir, işaretli değilse sadece başlatılır
+                  </small>
+                </div>
+                
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is_long_running" name="is_long_running" 
+                           {{ 'checked' if script and script.is_long_running else '' }}>
+                    <label class="form-check-label" for="is_long_running">
+                      <i class="fas fa-clock me-1"></i>Uzun Süren Script
+                    </label>
+                  </div>
+                  <small class="form-text text-muted">
+                    Backup, sync gibi uzun süre çalışan scriptler için
+                  </small>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="default_timeout" class="form-label">
+                    <i class="fas fa-stopwatch me-1"></i>Varsayılan Timeout (saniye)
+                  </label>
+                  <select class="form-select" id="default_timeout" name="default_timeout">
+                    <option value="30" {{ 'selected' if script and script.default_timeout == 30 else '' }}>30 saniye (Hızlı)</option>
+                    <option value="60" {{ 'selected' if script and script.default_timeout == 60 else '' }}>60 saniye (Normal)</option>
+                    <option value="300" {{ 'selected' if script and script.default_timeout == 300 else '' }}>5 dakika (Uzun)</option>
+                    <option value="600" {{ 'selected' if script and script.default_timeout == 600 else '' }}>10 dakika (Çok uzun)</option>
+                    <option value="1800" {{ 'selected' if script and script.default_timeout == 1800 else '' }}>30 dakika (Maksimum)</option>
+                  </select>
+                  <small class="form-text text-muted">
+                    Script çalıştırılırken kullanılacak varsayılan timeout
+                  </small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="alert alert-info">
+              <i class="fas fa-lightbulb me-2"></i>
+              <strong>Öneriler:</strong>
+              <ul class="mb-0 mt-2">
+                <li><strong>Hızlı komutlar:</strong> ls, ps, df, uptime → Çıktı bekle + 30s timeout</li>
+                <li><strong>Uzun komutlar:</strong> find, grep, backup → Çıktı bekleme + 5-10dk timeout</li>
+                <li><strong>Servis başlatma:</strong> systemctl start, service start → Çıktı bekleme + 60s timeout</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
         <div class="d-grid gap-2">
           <button type="submit" class="btn btn-success btn-lg">
             <i class="fas fa-save me-2"></i>Kaydet

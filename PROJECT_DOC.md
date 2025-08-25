@@ -1,4 +1,4 @@
-# NSM NEFES SCRIPT MANAGER - Kaynak Kod Dokümantasyonu
+# Script Manager - Kaynak Kod Dokümantasyonu
 
 Bu doküman, projenin ana dosya ve klasörlerinin ne işe yaradığını ve temel işlevlerin kaynak kodunda nasıl çalıştığını geliştirici gözüyle özetler.
 
@@ -33,6 +33,8 @@ ssh_script/
   - `add_script`, `edit_script`, `delete_script`: Script işlemleri
   - `run_script`: Seçili sunucuda script çalıştırma (SSH ile)
   - `dashboard`, `logs`, `scheduler`: Ana sayfa ve log/scheduler arayüzleri
+- **Sunucu grupları:** Artık her gruba özel renk (`color`) ve ikon (`icon`) atanabilir. Bu alanlar hem arayüzde badge/ikon olarak gösterilir hem de grup ekleme/düzenleme formlarında seçilebilir.
+- **Script çalıştırma:** Script çıktıları, çalıştırma tamamlanınca AJAX ile anında ekranda gösterilir. Sayfa yenilenmeden sonuçlar kullanıcıya sunulur.
 
 ### 2. **models.py**
 - **Tüm veritabanı modelleri burada tanımlanır.**

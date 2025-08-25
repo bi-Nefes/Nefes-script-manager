@@ -11,7 +11,7 @@ function togglePasswordField(id) {
 // Terminal Loading Animation
 function showTerminalLoading(pageName = 'Sayfa') {
   const terminalMessages = [
-    "> NSM NEFES SCRIPT MANAGER başlatılıyor...",
+            "> Script Manager başlatılıyor...",
     "> SSH bağlantıları kontrol ediliyor...",
     "> Script veritabanı yükleniyor...",
     "> Kullanıcı yetkileri doğrulanıyor...",
@@ -23,7 +23,7 @@ function showTerminalLoading(pageName = 'Sayfa') {
   terminalContainer.className = 'terminal-container';
   terminalContainer.innerHTML = `
     <div class="terminal-header">
-      <i class="fas fa-terminal me-2"></i>NSM NEFES SCRIPT MANAGER
+              <i class="fas fa-terminal me-2"></i>Script Manager
     </div>
     <div id="terminal-messages"></div>
   `;
@@ -41,18 +41,18 @@ function showTerminalLoading(pageName = 'Sayfa') {
       messagesContainer.appendChild(messageDiv);
       currentIndex++;
       
-      setTimeout(addMessage, 300);
+      setTimeout(addMessage, 150);
     } else {
       // Animasyon bitti, terminal'i kaldır
       setTimeout(() => {
         terminalContainer.style.opacity = '0';
-        terminalContainer.style.transition = 'opacity 0.5s ease-out';
+        terminalContainer.style.transition = 'opacity 0.3s ease-out';
         setTimeout(() => {
           if (document.body.contains(terminalContainer)) {
             document.body.removeChild(terminalContainer);
           }
-        }, 500);
-      }, 500);
+        }, 300);
+      }, 300);
     }
   }
   
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
           window.location.href = link;
-        }, 2000); // 2 saniye sonra sayfaya git
+        }, 1000); // 1 saniye sonra sayfaya git
       }
     }
   });

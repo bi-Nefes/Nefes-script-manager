@@ -1,24 +1,31 @@
 {% extends 'base.html' %}
-{% block title %}Script Manager - Kayıtlar{% endblock %}
+{% block title %}Kayıtlar - Script Manager{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
   <!-- Header Section -->
-  <div class="row mb-5">
+  <div class="row mb-4">
     <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h1 class="display-6 mb-2 fw-bold">
-            <i class="fas fa-list me-3 text-primary"></i>Kayıtlar
-          </h1>
-          <p class="lead text-muted mb-0">Script çalıştırma geçmişinizi görüntüleyin</p>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-primary" onclick="exportLogs()">
-            <i class="fas fa-download me-2"></i>Dışa Aktar
-          </button>
-          <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAllModal">
-            <i class="fas fa-trash me-2"></i>Toplu Sil
-          </button>
+      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+        <div class="card-body text-white p-4">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h1 class="display-6 fw-bold mb-2">
+                <i class="fas fa-list me-3"></i>Kayıt Yönetimi
+              </h1>
+              <p class="lead mb-0 opacity-90">Script çalıştırma geçmişinizi görüntüleyin ve yönetin</p>
+            </div>
+            <div class="col-lg-4 text-end">
+              <div class="d-flex gap-2">
+                <button class="btn btn-light" onclick="exportLogs()">
+                  <i class="fas fa-download me-2"></i>Dışa Aktar
+                </button>
+                <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#deleteAllModal">
+                  <i class="fas fa-trash me-2"></i>Toplu Sil
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -27,10 +34,15 @@
   <!-- Filters Section -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card border-0 shadow-sm">
+      <div class="card border-0 shadow-lg">
+        <div class="card-header bg-transparent border-0">
+          <h5 class="mb-0 fw-bold text-primary">
+            <i class="fas fa-filter me-2"></i>Filtre Ayarları
+          </h5>
+        </div>
         <div class="card-body p-4">
           <form method="GET" class="row g-3">
-            <div class="col-md-4">
+                <div class="col-md-3">
               <label for="server_id" class="form-label fw-semibold">
                 <i class="fas fa-server me-2"></i>Sunucu Filtresi
                   </label>
@@ -43,7 +55,7 @@
                     {% endfor %}
                   </select>
                 </div>
-            <div class="col-md-4">
+                <div class="col-md-3">
               <label for="script_id" class="form-label fw-semibold">
                 <i class="fas fa-code me-2"></i>Script Filtresi
                   </label>
@@ -56,7 +68,19 @@
                     {% endfor %}
                   </select>
                 </div>
-            <div class="col-md-4 d-flex align-items-end">
+            <div class="col-md-2">
+              <label for="start_date" class="form-label fw-semibold">
+                <i class="fas fa-calendar me-2"></i>Başlangıç
+              </label>
+              <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date or '' }}">
+            </div>
+            <div class="col-md-2">
+              <label for="end_date" class="form-label fw-semibold">
+                <i class="fas fa-calendar me-2"></i>Bitiş
+              </label>
+              <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date or '' }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
               <div class="d-flex gap-2 w-100">
                 <button type="submit" class="btn btn-primary flex-grow-1">
                   <i class="fas fa-search me-2"></i>Filtrele
@@ -74,16 +98,14 @@
 
   <!-- Statistics Cards -->
   <div class="row mb-4">
-    <div class="col-md-4 mb-3">
-      <div class="card border-0 shadow-sm">
+    <div class="col-md-4 mb-4">
+      <div class="card border-0 shadow-lg h-100" style="border-left: 4px solid var(--primary);">
         <div class="card-body p-4 text-center">
-          <div class="stat-icon mb-3">
-            <div class="bg-primary bg-opacity-10 rounded-circle p-3 mx-auto" style="width: fit-content;">
-              <i class="fas fa-list fa-2x text-primary"></i>
-            </div>
+          <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+            <i class="fas fa-list fa-2x text-primary"></i>
           </div>
           <h3 class="fw-bold text-primary mb-1">{{ logs|length }}</h3>
-          <p class="text-muted mb-0">Toplam Kayıt</p>
+          <p class="text-muted mb-0 fw-semibold">Toplam Kayıt</p>
         </div>
       </div>
     </div>
@@ -145,6 +167,9 @@
                     <i class="fas fa-code me-1"></i>Script
                   </th>
                   <th class="border-0 px-4 py-3">
+                    <i class="fas fa-info-circle me-1"></i>Durum
+                  </th>
+                  <th class="border-0 px-4 py-3">
                     <i class="fas fa-cogs me-1"></i>İşlemler
                   </th>
                 </tr>
@@ -173,7 +198,35 @@
                     {% endif %}
                   </td>
                   <td class="px-4 py-3">
+                    {% if log.status == 'success' %}
+                      <span class="badge bg-success">
+                        <i class="fas fa-check me-1"></i>Başarılı
+                      </span>
+                    {% elif log.status == 'error' %}
+                      <span class="badge bg-danger">
+                        <i class="fas fa-times me-1"></i>Hata
+                      </span>
+                    {% elif log.status == 'started' %}
+                      <span class="badge bg-warning">
+                        <i class="fas fa-play me-1"></i>Başlatıldı
+                      </span>
+                    {% elif log.status == 'timeout' %}
+                      <span class="badge bg-warning">
+                        <i class="fas fa-clock me-1"></i>Timeout
+                      </span>
+                    {% else %}
+                      <span class="badge bg-secondary">
+                        <i class="fas fa-question me-1"></i>{{ log.status }}
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="px-4 py-3">
                     <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-info" type="button" 
+                              data-bs-toggle="modal" data-bs-target="#outputModal{{ log.id }}"
+                              title="Çıktıyı Görüntüle">
+                        <i class="fas fa-eye"></i>
+                      </button>
                       <button class="btn btn-outline-danger" type="button" 
                               data-bs-toggle="modal" data-bs-target="#deleteModal{{ log.id }}"
                               title="Sil">
@@ -203,6 +256,82 @@
     </div>
   </div>
 </div>
+
+<!-- Output Modals -->
+{% for log in logs %}
+<div class="modal fade" id="outputModal{{ log.id }}" tabindex="-1" aria-labelledby="outputModalLabel{{ log.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="outputModalLabel{{ log.id }}">
+          <i class="fas fa-terminal me-2 text-info"></i>Script Çıktısı
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <strong>Sunucu:</strong> {{ log.server.name if log.server else 'Bilinmiyor' }}
+          </div>
+          <div class="col-md-6">
+            <strong>Script:</strong> {{ log.script.name if log.script else 'Bilinmiyor' }}
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <strong>Tarih:</strong> {{ (log.timestamp + timedelta(hours=3)).strftime('%d.%m.%Y %H:%M:%S') }}
+          </div>
+          <div class="col-md-6">
+            <strong>Durum:</strong> 
+            {% if log.status == 'success' %}
+              <span class="badge bg-success">
+                <i class="fas fa-check me-1"></i>Başarılı
+              </span>
+            {% elif log.status == 'error' %}
+              <span class="badge bg-danger">
+                <i class="fas fa-times me-1"></i>Hata
+              </span>
+            {% elif log.status == 'started' %}
+              <span class="badge bg-warning">
+                <i class="fas fa-play me-1"></i>Başlatıldı
+              </span>
+            {% elif log.status == 'timeout' %}
+              <span class="badge bg-warning">
+                <i class="fas fa-clock me-1"></i>Timeout
+              </span>
+            {% else %}
+              <span class="badge bg-secondary">
+                <i class="fas fa-question me-1"></i>{{ log.status }}
+              </span>
+            {% endif %}
+          </div>
+        </div>
+        {% if log.execution_time %}
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <strong>Çalışma Süresi:</strong> {{ "%.2f"|format(log.execution_time) }} saniye
+          </div>
+        </div>
+        {% endif %}
+        <div class="mb-3">
+          <strong>Terminal Çıktısı:</strong>
+          <div class="mt-2">
+            <pre class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto; font-size: 0.875rem;">{{ log.output or 'Çıktı bulunamadı' }}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Kapat
+        </button>
+        <button type="button" class="btn btn-primary" onclick="copyOutput('{{ log.id }}')">
+          <i class="fas fa-copy me-1"></i>Kopyala
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
 
 <!-- Delete Modals -->
 {% for log in logs %}
@@ -375,6 +504,52 @@ function exportLogs() {
   a.download = `logs_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   window.URL.revokeObjectURL(url);
+}
+
+function copyOutput(logId) {
+  // Çıktıyı panoya kopyala
+  const modal = document.getElementById(`outputModal${logId}`);
+  const outputElement = modal.querySelector('pre');
+  const text = outputElement.textContent;
+  
+  navigator.clipboard.writeText(text).then(function() {
+    // Başarı mesajı göster
+    showToast('Çıktı panoya kopyalandı!', 'success');
+  }).catch(function(err) {
+    console.error('Kopyalama hatası:', err);
+    showToast('Kopyalama başarısız!', 'error');
+  });
+}
+
+function showToast(message, type = 'info') {
+  // Toast bildirimi göster
+  const toast = document.createElement('div');
+  toast.className = `toast align-items-center text-white bg-${type} border-0`;
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+  
+  const container = document.querySelector('.toast-container') || createToastContainer();
+  container.appendChild(toast);
+  const toastInstance = new bootstrap.Toast(toast);
+  toastInstance.show();
+  
+  toast.addEventListener('hidden.bs.toast', () => {
+    container.removeChild(toast);
+  });
+}
+
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.className = 'toast-container position-fixed top-0 end-0 p-3';
+  container.style.zIndex = '9999';
+  document.body.appendChild(container);
+  return container;
 }
 </script>
 

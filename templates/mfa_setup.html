@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}MFA Kurulumu - Script Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="card border-0 shadow-lg">
+        <div class="card-header bg-primary text-white text-center">
+          <h3 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>İki Faktörlü Doğrulama Kurulumu
+          </h3>
+        </div>
+        <div class="card-body p-5">
+          
+          <div class="text-center mb-4">
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>{{ user.username }}</strong> hesabınız için güvenlik artırılıyor!
+            </div>
+          </div>
+
+          <!-- QR Kod Bölümü -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="text-center">
+                <h5 class="mb-3">QR Kodu Tarayın</h5>
+                <div class="qr-container p-3 border rounded">
+                  <img src="data:image/png;base64,{{ qr_code_base64 }}" 
+                       alt="MFA QR Code" 
+                       class="img-fluid"
+                       style="max-width: 200px;">
+                </div>
+                <p class="text-muted small mt-2">
+                  Google Authenticator, Authy veya benzeri uygulamayı kullanın
+                </p>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="manual-setup">
+                <h5 class="mb-3">Manuel Kurulum</h5>
+                <div class="form-group mb-3">
+                  <label class="form-label fw-semibold">Uygulama Adı:</label>
+                  <input type="text" class="form-control" value="Script Manager" readonly>
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label fw-semibold">Kullanıcı Adı:</label>
+                  <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label fw-semibold">Secret Key:</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control font-monospace" value="{{ secret }}" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copySecret()">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Yedek Kodlar -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="alert alert-warning">
+                <h6 class="alert-heading">
+                  <i class="fas fa-exclamation-triangle me-2"></i>Yedek Kodları Güvenli Yerde Saklayın!
+                </h6>
+                <p class="mb-2">Bu kodları telefonunuzu kaybettiğinizde veya MFA uygulamasına erişemediğinizde kullanabilirsiniz.</p>
+                <div class="backup-codes-container">
+                  <div class="row g-2">
+                    {% for code in backup_codes %}
+                    <div class="col-md-2 col-sm-3 col-4">
+                      <code class="backup-code">{{ code }}</code>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                <button class="btn btn-outline-warning btn-sm mt-2" onclick="downloadBackupCodes()">
+                  <i class="fas fa-download me-1"></i>Yedek Kodları İndir
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kurulum Tamamlama -->
+          <div class="text-center">
+            <div class="alert alert-success">
+              <i class="fas fa-check-circle me-2"></i>
+              <strong>Adım 1:</strong> QR kodu telefonunuzdaki MFA uygulamasına tarayın<br>
+              <strong>Adım 2:</strong> Uygulamada 6 haneli kodu görüntüleyin<br>
+              <strong>Adım 3:</strong> Aşağıdaki butona tıklayarak kurulumu tamamlayın
+            </div>
+            
+            <form method="POST" class="d-inline">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-check me-2"></i>MFA Kurulumunu Tamamla
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.qr-container {
+  background: white;
+  display: inline-block;
+}
+
+.backup-code {
+  background: var(--bg-secondary);
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: var(--primary);
+  display: block;
+  text-align: center;
+  border: 1px solid var(--border-light);
+}
+
+.manual-setup {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.font-monospace {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+</style>
+
+<script>
+function copySecret() {
+  const secretInput = document.querySelector('input[value="{{ secret }}"]');
+  secretInput.select();
+  document.execCommand('copy');
+  
+  // Kopyalandı bildirimi
+  const button = event.target.closest('button');
+  const originalText = button.innerHTML;
+  button.innerHTML = '<i class="fas fa-check"></i>';
+  button.classList.remove('btn-outline-secondary');
+  button.classList.add('btn-success');
+  
+  setTimeout(() => {
+    button.innerHTML = originalText;
+    button.classList.remove('btn-success');
+    button.classList.add('btn-outline-secondary');
+  }, 2000);
+}
+
+function downloadBackupCodes() {
+  const codes = {{ backup_codes|tojson }};
+  const content = codes.join('\n');
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'backup_codes.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %} 

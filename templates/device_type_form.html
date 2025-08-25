@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 800px;">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="fas fa-microchip me-2"></i>
+        {% if action == 'add' %}Yeni Cihaz Türü Ekle{% else %}Cihaz Türü Düzenle{% endif %}
+      </h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" novalidate>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="name" class="form-label">
+                <i class="fas fa-tag me-1"></i>Cihaz Türü Adı *
+              </label>
+              <input type="text" class="form-control" id="name" name="name" 
+                     value="{{ device_type.name if device_type else '' }}" required
+                     placeholder="Cisco Router, Juniper Switch, etc.">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="vendor" class="form-label">
+                <i class="fas fa-building me-1"></i>Vendor *
+              </label>
+              <input type="text" class="form-control" id="vendor" name="vendor" 
+                     value="{{ device_type.vendor if device_type else '' }}" required
+                     placeholder="Cisco, Juniper, Mikrotik, etc.">
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="model_family" class="form-label">
+                <i class="fas fa-cube me-1"></i>Model Ailesi
+              </label>
+              <input type="text" class="form-control" id="model_family" name="model_family" 
+                     value="{{ device_type.model_family if device_type else '' }}"
+                     placeholder="Catalyst, Nexus, ISR, etc.">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="description" class="form-label">
+                <i class="fas fa-info-circle me-1"></i>Açıklama
+              </label>
+              <textarea class="form-control" id="description" name="description" rows="3"
+                        placeholder="Cihaz türü hakkında açıklama...">{{ device_type.description if device_type else '' }}</textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Komut Ayarları -->
+        <div class="card mt-4">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-terminal me-2"></i>Komut Ayarları
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="show_config_cmd" class="form-label">
+                    <i class="fas fa-file-code me-1"></i>Config Komutu
+                  </label>
+                  <input type="text" class="form-control" id="show_config_cmd" name="show_config_cmd" 
+                         value="{{ device_type.show_config_cmd if device_type else 'show running-config' }}"
+                         placeholder="show running-config">
+                  <small class="form-text text-muted">Cihazın config'ini göstermek için kullanılan komut</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="show_interfaces_cmd" class="form-label">
+                    <i class="fas fa-network-wired me-1"></i>Interface Komutu
+                  </label>
+                  <input type="text" class="form-control" id="show_interfaces_cmd" name="show_interfaces_cmd" 
+                         value="{{ device_type.show_interfaces_cmd if device_type else 'show interfaces' }}"
+                         placeholder="show interfaces">
+                  <small class="form-text text-muted">Interface bilgilerini göstermek için kullanılan komut</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="show_version_cmd" class="form-label">
+                    <i class="fas fa-info me-1"></i>Version Komutu
+                  </label>
+                  <input type="text" class="form-control" id="show_version_cmd" name="show_version_cmd" 
+                         value="{{ device_type.show_version_cmd if device_type else 'show version' }}"
+                         placeholder="show version">
+                  <small class="form-text text-muted">Cihaz versiyon bilgilerini göstermek için kullanılan komut</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="show_uptime_cmd" class="form-label">
+                    <i class="fas fa-clock me-1"></i>Uptime Komutu
+                  </label>
+                  <input type="text" class="form-control" id="show_uptime_cmd" name="show_uptime_cmd" 
+                         value="{{ device_type.show_uptime_cmd if device_type else 'show uptime' }}"
+                         placeholder="show uptime">
+                  <small class="form-text text-muted">Cihaz uptime bilgilerini göstermek için kullanılan komut</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="extra_commands" class="form-label">
+            <i class="fas fa-terminal me-1"></i>Ek Komutlar (JSON)
+          </label>
+          <textarea class="form-control" id="extra_commands" name="extra_commands" rows="4" placeholder='{"show_vlan": "show vlan", "show_mac": "show mac address-table"}'>{{ device_type.extra_commands if device_type and device_type.extra_commands else '' }}</textarea>
+          <div class="form-text">
+            <small class="text-muted">
+              Anahtar-değer şeklinde JSON girin. Örnek: {"show_vlan": "show vlan", "show_mac": "show mac address-table"}
+            </small>
+          </div>
+        </div>
+        
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+          <a href="/device-types" class="btn btn-secondary me-md-2">
+            <i class="fas fa-times me-1"></i>İptal
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>
+            {% if action == 'add' %}Ekle{% else %}Güncelle{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.form-control:focus {
+  border-color: #0dcaf0;
+  box-shadow: 0 0 0 0.2rem rgba(13, 202, 240, 0.25);
+}
+
+.card {
+  border: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  border: none;
+  padding: 1.5rem;
+}
+</style>
+{% endblock %} 

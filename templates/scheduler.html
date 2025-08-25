@@ -1,20 +1,30 @@
 {% extends 'base.html' %}
+{% block title %}Zamanlayıcı - Script Manager{% endblock %}
+
 {% block content %}
-<div class="container-fluid mt-4">
-  <div class="row">
+<div class="container-fluid py-4">
+  <!-- Header Section -->
+  <div class="row mb-4">
     <div class="col-12">
-      <!-- Header Section -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2 class="mb-1 text-success">
-            <i class="fas fa-clock me-2"></i>Zamanlanmış Görevler
-          </h2>
-          <p class="text-muted mb-0">Otomatik çalışacak görevlerinizi yönetin</p>
+      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+        <div class="card-body text-white p-4">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h1 class="display-6 fw-bold mb-2">
+                <i class="fas fa-clock me-3"></i>Zamanlayıcı Yönetimi
+              </h1>
+              <p class="lead mb-0 opacity-90">
+                Otomatik çalışacak görevlerinizi yönetin ve izleyin
+              </p>
         </div>
-        <div>
-          <a href="/scheduler/add" class="btn btn-success btn-lg">
+            <div class="col-lg-4 text-end">
+              <a href="/scheduler/add" class="btn btn-light btn-lg px-4">
             <i class="fas fa-plus me-2"></i>Yeni Görev Ekle
           </a>
+            </div>
+          </div>
+        </div>
+      </div>
         </div>
       </div>
 
@@ -32,408 +42,976 @@
 
       <!-- Statistics Cards -->
       <div class="row mb-4">
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center">
-              <div class="display-6 text-success mb-2">
-                <i class="fas fa-clock"></i>
+    <div class="col-md-3 mb-4">
+      <div class="card border-0 shadow-lg h-100" style="border-left: 4px solid var(--primary);">
+        <div class="card-body text-center p-4">
+          <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+            <i class="fas fa-clock fa-2x text-primary"></i>
+          </div>
+          <h5 class="card-title text-muted fw-semibold">Toplam Görev</h5>
+          <h3 class="text-primary mb-0 fw-bold">{{ tasks|length }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-4">
+      <div class="card border-0 shadow-lg h-100" style="border-left: 4px solid var(--success);">
+        <div class="card-body text-center p-4">
+          <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+            <i class="fas fa-check-circle fa-2x text-success"></i>
+          </div>
+          <h5 class="card-title text-muted fw-semibold">Aktif</h5>
+          <h3 class="text-success mb-0 fw-bold" id="active-count">{{ tasks|selectattr('is_active')|list|length }}</h3>
+        </div>
               </div>
-              <h5 class="card-title text-muted">Toplam Görev</h5>
-              <h3 class="text-success mb-0">{{ tasks|length }}</h3>
             </div>
+    <div class="col-md-3 mb-4">
+      <div class="card border-0 shadow-lg h-100" style="border-left: 4px solid var(--secondary);">
+        <div class="card-body text-center p-4">
+          <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+            <i class="fas fa-pause-circle fa-2x text-secondary"></i>
+          </div>
+          <h5 class="card-title text-muted fw-semibold">Pasif</h5>
+          <h3 class="text-secondary mb-0 fw-bold" id="inactive-count">{{ tasks|rejectattr('is_active')|list|length }}</h3>
+        </div>
+              </div>
+            </div>
+    <div class="col-md-3 mb-4">
+      <div class="card border-0 shadow-lg h-100" style="border-left: 4px solid var(--info);">
+        <div class="card-body text-center p-4">
+          <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+            <i class="fas fa-calendar-alt fa-2x text-info"></i>
+          </div>
+          <h5 class="card-title text-muted fw-semibold">Bugün Çalışacak</h5>
+          <h3 class="text-info mb-0 fw-bold" id="today-count">-</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tasks Table -->
+  {% if tasks %}
+  
+  <!-- Search and Filter Section -->
+  <div class="card border-0 shadow-lg mb-4">
+    <div class="card-header bg-transparent border-0">
+      <h5 class="mb-0 fw-bold text-primary">
+        <i class="fas fa-search me-2"></i>Arama ve Filtreleme
+      </h5>
+    </div>
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <!-- Quick Search -->
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="quickSearch" class="form-label fw-semibold">
+              <i class="fas fa-search me-1"></i>Hızlı Arama
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   id="quickSearch" 
+                   placeholder="Görev adı, sunucu, script...">
+            <small class="form-text text-muted">Anlık arama yapar</small>
+              </div>
+            </div>
+        
+        <!-- Status Filter -->
+        <div class="col-lg-2">
+          <div class="form-group">
+            <label for="statusFilter" class="form-label fw-semibold">
+              <i class="fas fa-toggle-on me-1"></i>Durum
+            </label>
+            <select class="form-select" id="statusFilter">
+              <option value="">Tümü</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Pasif</option>
+            </select>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center">
-              <div class="display-6 text-success mb-2">
-                <i class="fas fa-check-circle"></i>
+        
+        <!-- Server Filter -->
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="serverFilter" class="form-label fw-semibold">
+              <i class="fas fa-server me-1"></i>Sunucu
+            </label>
+            <select class="form-select" id="serverFilter">
+              <option value="">Tüm Sunucular</option>
+              {% for task in tasks %}
+                {% if loop.first or task.server.name != tasks[loop.index0-1].server.name %}
+                  <option value="{{ task.server.name }}">{{ task.server.name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
               </div>
-              <h5 class="card-title text-muted">Aktif</h5>
-              <h3 class="text-success mb-0" id="active-count">{{ tasks|selectattr('is_active')|list|length }}</h3>
             </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center">
-              <div class="display-6 text-secondary mb-2">
-                <i class="fas fa-pause-circle"></i>
-              </div>
-              <h5 class="card-title text-muted">Pasif</h5>
-              <h3 class="text-secondary mb-0" id="inactive-count">{{ tasks|rejectattr('is_active')|list|length }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center">
-              <div class="display-6 text-info mb-2">
-                <i class="fas fa-calendar-alt"></i>
-              </div>
-              <h5 class="card-title text-muted">Bugün Çalışacak</h5>
-              <h3 class="text-info mb-0" id="today-count">-</h3>
-            </div>
+        
+        <!-- Script Type Filter -->
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="scriptFilter" class="form-label fw-semibold">
+              <i class="fas fa-code me-1"></i>Script
+            </label>
+            <select class="form-select" id="scriptFilter">
+              <option value="">Tüm Scriptler</option>
+              {% for task in tasks %}
+                {% if loop.first or task.script.name != tasks[loop.index0-1].script.name %}
+                  <option value="{{ task.script.name }}">{{ task.script.name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
           </div>
         </div>
       </div>
 
-      <!-- Tasks Grid -->
-      {% if tasks %}
-      <div class="row">
-        {% for task in tasks %}
-        <div class="col-lg-4 col-md-6 mb-4">
-          <div class="card task-card border-0 shadow-sm h-100" data-task-id="{{ task.id }}">
-            <div class="card-header bg-gradient-success text-white border-0">
+      <!-- Advanced Filters -->
+      <div class="row mt-3">
+        <div class="col-12">
               <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                  <i class="fas fa-clock me-2"></i>{{ task.name }}
-                </h5>
-                <div class="dropdown">
-                  <button class="btn btn-link text-white p-0" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-ellipsis-v"></i>
+            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters">
+              <i class="fas fa-filter me-1"></i>Gelişmiş Filtreler
+            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary btn-sm" id="clearFilters">
+                <i class="fas fa-times me-1"></i>Filtreleri Temizle
+              </button>
+              <button class="btn btn-outline-info btn-sm" id="exportTasks">
+                <i class="fas fa-download me-1"></i>Dışa Aktar
                   </button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item run-task-btn" href="#" data-task-id="{{ task.id }}" data-task-name="{{ task.name }}">
-                      <i class="fas fa-play me-2"></i>Şimdi Çalıştır
-                    </a></li>
-                    <li><a class="dropdown-item" href="/scheduler/edit/{{ task.id }}">
-                      <i class="fas fa-edit me-2"></i>Düzenle
-                    </a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger delete-task-btn" href="#" data-task-id="{{ task.id }}" data-task-name="{{ task.name }}">
-                      <i class="fas fa-trash me-2"></i>Sil
-                    </a></li>
-                  </ul>
-                </div>
-              </div>
             </div>
-            <div class="card-body">
-              <div class="task-info">
-                <div class="info-item mb-3">
-                  <div class="info-label text-muted small">
-                    <i class="fas fa-server me-1"></i>Sunucu
-                  </div>
-                  <div class="info-value">
-                    <span class="badge bg-primary">{{ task.server.name }}</span>
-                  </div>
-                </div>
-                
-                <div class="info-item mb-3">
-                  <div class="info-label text-muted small">
-                    <i class="fas fa-file-code me-1"></i>Script
-                  </div>
-                  <div class="info-value">
-                    <code class="bg-light px-2 py-1 rounded">{{ task.script.name }}</code>
+          </div>
+          
+          <div class="collapse mt-3" id="advancedFilters">
+            <div class="card card-body bg-light border-0">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Sonraki Çalışma Tarihi</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                    <input type="date" class="form-control" id="nextRunDate">
                   </div>
                 </div>
-                
-                <div class="info-item mb-3">
-                  <div class="info-label text-muted small">
-                    <i class="fas fa-calendar me-1"></i>Zamanlama
-                  </div>
-                  <div class="info-value">
-                    <small><code class="bg-light px-2 py-1 rounded">{{ task.cron_expression }}</code></small>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Son Çalışma Tarihi</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                    <input type="date" class="form-control" id="lastRunDate">
                   </div>
                 </div>
-                
-                <div class="info-item mb-3">
-                  <div class="info-label text-muted small">
-                    <i class="fas fa-calendar-check me-1"></i>Sonraki Çalışma
-                  </div>
-                  <div class="info-value">
-                    {% if task.next_run %}
-                      <span class="text-primary fw-bold">{{ task.next_run.strftime('%d.%m.%Y %H:%M') }}</span>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-              
-              <hr class="my-3">
-              
-              <!-- Task Status -->
-              <div class="task-status text-center">
-                <div class="status-indicator mb-3" id="status-indicator-{{ task.id }}">
-                  {% if task.is_active %}
-                    <div class="status-dot status-success"></div>
-                    <span class="status-text text-success">Aktif</span>
-                  {% else %}
-                    <div class="status-dot status-secondary"></div>
-                    <span class="status-text text-secondary">Pasif</span>
-                  {% endif %}
-                </div>
-                <div class="btn-group w-100" role="group">
-                  <button class="btn btn-outline-success btn-sm run-task-btn" data-task-id="{{ task.id }}" data-task-name="{{ task.name }}">
-                    <i class="fas fa-play me-1"></i>Çalıştır
-                  </button>
-                  <a href="/scheduler/edit/{{ task.id }}" class="btn btn-outline-warning btn-sm">
-                    <i class="fas fa-edit me-1"></i>Düzenle
-                  </a>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Cron Pattern</label>
+                  <input type="text" class="form-control" id="cronPattern" placeholder="* * * * *">
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {% endfor %}
+                  </div>
+                  </div>
+                </div>
+                
+  <!-- Results Summary -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="results-summary">
+      <span class="text-muted">
+        <i class="fas fa-list me-1"></i>
+        <span id="visibleCount">{{ tasks|length }}</span> / <span id="totalCount">{{ tasks|length }}</span> görev gösteriliyor
+      </span>
+    </div>
+    <div class="view-options">
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button" class="btn btn-outline-primary active" id="tableView">
+          <i class="fas fa-table me-1"></i>Tablo
+        </button>
+        <button type="button" class="btn btn-outline-primary" id="cardView">
+          <i class="fas fa-th-large me-1"></i>Kart
+        </button>
+                  </div>
+                  </div>
+                </div>
+                
+  <div class="card border-0 shadow-lg">
+    <div class="card-header bg-transparent border-0">
+      <h5 class="mb-0 fw-bold text-primary">
+        <i class="fas fa-list me-2"></i>Zamanlanmış Görevler
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" id="tasksTable">
+          <thead class="bg-light">
+            <tr>
+              <th class="border-0 px-4 py-3">
+                <i class="fas fa-cog me-1"></i>Görev
+              </th>
+              <th class="border-0 px-4 py-3">
+                <i class="fas fa-server me-1"></i>Sunucu
+              </th>
+              <th class="border-0 px-4 py-3">
+                <i class="fas fa-code me-1"></i>Script
+              </th>
+              <th class="border-0 px-4 py-3">
+                    <i class="fas fa-calendar me-1"></i>Zamanlama
+              </th>
+              <th class="border-0 px-4 py-3">
+                <i class="fas fa-clock me-1"></i>Sonraki Çalışma
+              </th>
+              <th class="border-0 px-4 py-3">
+                <i class="fas fa-info-circle me-1"></i>Durum
+              </th>
+              <th class="border-0 px-4 py-3 text-center">
+                <i class="fas fa-cogs me-1"></i>İşlemler
+              </th>
+            </tr>
+          </thead>
+          <tbody id="tasksTableBody">
+            {% for task in tasks %}
+            <tr class="task-row" data-task-id="{{ task.id }}" 
+                data-task-name="{{ task.name|lower }}"
+                data-server-name="{{ task.server.name|lower }}"
+                data-script-name="{{ task.script.name|lower }}"
+                data-status="{{ 'active' if task.is_active else 'inactive' }}"
+                data-next-run="{{ task.next_run.isoformat() if task.next_run else '' }}"
+                data-last-run="{{ task.last_run.isoformat() if task.last_run else '' }}"
+                data-cron="{{ task.cron_expression }}">
+              <td class="px-4 py-3">
+                <div class="d-flex align-items-center">
+                  <div class="task-icon me-3">
+                    <i class="fas fa-clock fa-lg text-primary"></i>
+                  </div>
+                  <div>
+                    <div class="fw-semibold text-primary">{{ task.name }}</div>
+                    <small class="text-muted">ID: {{ task.id }}</small>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="badge bg-primary bg-opacity-75 px-3 py-2">
+                  <i class="fas fa-server me-1"></i>{{ task.server.name }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <code class="bg-light px-2 py-1 rounded">{{ task.script.name }}</code>
+              </td>
+              <td class="px-4 py-3">
+                <div class="cron-info">
+                  <code class="bg-light px-2 py-1 rounded text-sm">{{ task.cron_expression }}</code>
+                  <div class="mt-1">
+                    <small class="text-muted">
+                      {% if task.last_run %}
+                        Son: {{ (task.last_run + timedelta(hours=3)).strftime('%d.%m %H:%M') }}
+                    {% else %}
+                        Henüz çalışmamış
+                    {% endif %}
+                    </small>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                {% if task.next_run %}
+                  <div class="next-run-info">
+                    <div class="fw-semibold text-primary">
+                      {{ (task.next_run + timedelta(hours=3)).strftime('%d.%m.%Y') }}
+                    </div>
+                    <div class="text-muted">
+                      {{ (task.next_run + timedelta(hours=3)).strftime('%H:%M') }}
+                </div>
+              </div>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3">
+                <div class="status-indicator" id="status-indicator-{{ task.id }}">
+                  {% if task.is_active %}
+                    <span class="badge bg-success bg-opacity-75 px-3 py-2">
+                      <i class="fas fa-check-circle me-1"></i>Aktif
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary bg-opacity-75 px-3 py-2">
+                      <i class="fas fa-pause-circle me-1"></i>Pasif
+                    </span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button class="btn btn-outline-success run-task-btn" 
+                          data-task-id="{{ task.id }}" 
+                          data-task-name="{{ task.name }}"
+                          title="Şimdi Çalıştır">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <a href="/scheduler/edit/{{ task.id }}" 
+                     class="btn btn-outline-warning"
+                     title="Düzenle">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <button class="btn btn-outline-danger delete-task-btn" 
+                          data-task-id="{{ task.id }}" 
+                          data-task-name="{{ task.name }}"
+                          title="Sil">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+              </div>
+            </div>
+          </div>
+  
+  <!-- Card View (Hidden by default) -->
+  <div class="card border-0 shadow-lg" id="cardViewContainer" style="display: none;">
+    <div class="card-header bg-transparent border-0">
+      <h5 class="mb-0 fw-bold text-primary">
+        <i class="fas fa-th-large me-2"></i>Kart Görünümü
+      </h5>
+        </div>
+    <div class="card-body">
+      <div class="row" id="cardViewBody">
+        <!-- Cards will be populated by JavaScript -->
       </div>
+    </div>
+  </div>
+  
       {% else %}
       <!-- Empty State -->
-      <div class="text-center py-5">
+  <div class="card border-0 shadow-lg">
+    <div class="card-body text-center py-5">
         <div class="empty-state">
           <div class="empty-icon mb-4">
             <i class="fas fa-clock fa-4x text-muted"></i>
           </div>
           <h3 class="text-muted mb-3">Henüz Zamanlanmış Görev Yok</h3>
           <p class="text-muted mb-4">İlk zamanlanmış görevinizi ekleyerek otomatik script çalıştırmaya başlayın.</p>
-          <a href="/scheduler/add" class="btn btn-success btn-lg">
+        <a href="/scheduler/add" class="btn btn-primary btn-lg">
             <i class="fas fa-plus me-2"></i>İlk Görevi Ekle
           </a>
+      </div>
         </div>
       </div>
       {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTaskModal" tabindex="-1" aria-labelledby="deleteTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteTaskModalLabel">
+          <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Görev Sil
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bu zamanlanmış görevi silmek istediğinizden emin misiniz?</p>
+        <div class="alert alert-info">
+          <strong>Görev:</strong> <span id="delete-task-name"></span><br>
+          <strong>Sunucu:</strong> <span id="delete-task-server"></span><br>
+          <strong>Script:</strong> <span id="delete-task-script"></span>
+        </div>
+        <p class="text-danger">
+          <i class="fas fa-warning me-1"></i>Bu işlem geri alınamaz!
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>İptal
+        </button>
+        <form method="post" action="/scheduler/delete/" id="delete-task-form" style="display: inline;">
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash me-1"></i>Sil
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Run Task Modal -->
+<div class="modal fade" id="runTaskModal" tabindex="-1" aria-labelledby="runTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="runTaskModalLabel">
+          <i class="fas fa-play me-2 text-success"></i>Görev Çalıştır
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bu zamanlanmış görevi şimdi çalıştırmak istediğinizden emin misiniz?</p>
+        <div class="alert alert-success">
+          <strong>Görev:</strong> <span id="run-task-name"></span><br>
+          <strong>Sunucu:</strong> <span id="run-task-server"></span><br>
+          <strong>Script:</strong> <span id="run-task-script"></span>
+        </div>
+        <p class="text-info">
+          <i class="fas fa-info-circle me-1"></i>Görev çalıştırıldıktan sonra sonraki çalışma zamanı güncellenecektir.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>İptal
+        </button>
+        <form method="post" action="/scheduler/run/" id="run-task-form" style="display: inline;">
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-play me-1"></i>Çalıştır
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-.task-card {
-  transition: all 0.3s ease;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.task-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-}
-
-.bg-gradient-success {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-}
-
-.info-item {
+.task-row {
   transition: all 0.2s ease;
 }
 
-.info-item:hover {
-  background: rgba(0,0,0,0.02);
-  border-radius: 8px;
-  padding: 8px;
-  margin: -8px;
+.task-row:hover {
+  background-color: var(--bg-secondary);
+  transform: scale(1.01);
 }
 
-.info-label {
-  font-weight: 500;
-  margin-bottom: 4px;
+.task-row.d-none {
+  display: none !important;
 }
 
-.info-value {
-  font-size: 0.95rem;
+.task-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border-radius: 50%;
 }
 
-.task-status {
-  padding: 15px;
-  background: rgba(0,0,0,0.02);
-  border-radius: 8px;
-  margin-top: 10px;
+.cron-info code {
+  font-size: 0.8rem;
+  font-family: 'Courier New', monospace;
+}
+
+.next-run-info {
+  line-height: 1.2;
 }
 
 .status-indicator {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 8px;
 }
 
-.status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.status-success {
-  background: #28a745;
-  animation: pulse 2s infinite;
-}
-
-.status-secondary {
-  background: #6c757d;
-  animation: pulse 2s infinite;
-}
-
-.status-text {
-  font-size: 0.9rem;
-  font-weight: 500;
+.btn-group .btn {
+  border-radius: var(--radius-sm);
 }
 
 .empty-state {
-  max-width: 400px;
-  margin: 0 auto;
+  padding: 2rem 0;
 }
 
 .empty-icon {
   opacity: 0.5;
 }
 
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+.card {
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
 }
 
-.card-header {
-  border-radius: 12px 12px 0 0 !important;
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl) !important;
 }
 
-.btn-link {
-  text-decoration: none;
+.badge {
+  font-weight: 500;
+  letter-spacing: 0.025em;
 }
 
-.btn-link:hover {
-  text-decoration: none;
+.table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border-light);
 }
 
-.dropdown-menu {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  border: none;
+.table td {
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-light);
 }
 
-.dropdown-item {
-  padding: 8px 16px;
+.table-hover tbody tr:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* Search and Filter Styles */
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
   transition: all 0.2s ease;
 }
 
-.dropdown-item:hover {
-  background: rgba(0,0,0,0.05);
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
 }
 
-.dropdown-item.text-danger:hover {
-  background: rgba(220, 53, 69, 0.1);
+.input-group-text {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
 }
 
-.btn-group .btn {
-  border-radius: 6px !important;
+/* Advanced Filters */
+#advancedFilters .card-body {
+  background: var(--bg-secondary) !important;
+  border-radius: var(--radius-md);
 }
 
-.btn-group .btn:first-child {
-  border-top-right-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
+.collapse {
+  transition: all 0.3s ease;
 }
 
-.btn-group .btn:last-child {
-  border-top-left-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
+/* Results Summary */
+.results-summary {
+  font-size: 0.9rem;
+}
+
+.view-options .btn-group .btn {
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.view-options .btn.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* Card View Styles */
+#cardViewContainer .card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+#cardViewContainer .card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-xl) !important;
+}
+
+#cardViewContainer .card-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+  border-radius: 0 !important;
+}
+
+#cardViewContainer .badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .col-lg-4, .col-md-6 {
+    margin-bottom: 1rem;
+  }
+  
+  .view-options {
+    margin-top: 1rem;
+  }
+  
+  .results-summary {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Animation for filtering */
+.task-row {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Export button hover effect */
+#exportTasks:hover {
+  background-color: var(--info);
+  border-color: var(--info);
+  color: white;
+}
+
+/* Clear filters button hover effect */
+#clearFilters:hover {
+  background-color: var(--secondary);
+  border-color: var(--secondary);
+  color: white;
 }
 </style>
 
 <script>
-function checkScheduledTasks() {
-    const button = document.getElementById('check-tasks-btn');
-    const originalText = button.innerHTML;
-    
-    // Loading durumu
-    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kontrol ediliyor...';
-    button.disabled = true;
-    
-    fetch('/scheduler/check_tasks')
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            // Sayfayı yenile
-            location.reload();
-        } else {
-            alert('Görev kontrolü sırasında hata oluştu!');
-        }
-    })
-    .catch(error => {
-        alert('Görev kontrolü sırasında hata oluştu!');
-    })
-    .finally(() => {
-        button.innerHTML = originalText;
-        button.disabled = false;
-    });
-}
-
-function runTask(taskId, taskName) {
-    if (confirm(`${taskName} görevini şimdi çalıştırmak istediğinize emin misiniz?`)) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/scheduler/run/${taskId}`;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function deleteTask(taskId, taskName) {
-    if (confirm(`${taskName} görevini silmek istediğinize emin misiniz?`)) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/scheduler/delete/${taskId}`;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-// Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Check tasks button
-    const checkBtn = document.getElementById('check-tasks-btn');
-    if (checkBtn) {
-        checkBtn.addEventListener('click', checkScheduledTasks);
+  // Global variables
+  let allTasks = [];
+  let filteredTasks = [];
+  
+  // Initialize tasks data
+  function initializeTasks() {
+    const rows = document.querySelectorAll('.task-row');
+    allTasks = Array.from(rows).map(row => ({
+      element: row,
+      name: row.getAttribute('data-task-name'),
+      server: row.getAttribute('data-server-name'),
+      script: row.getAttribute('data-script-name'),
+      status: row.getAttribute('data-status'),
+      nextRun: row.getAttribute('data-next-run'),
+      lastRun: row.getAttribute('data-last-run'),
+      cron: row.getAttribute('data-cron')
+    }));
+    filteredTasks = [...allTasks];
+    updateResultsSummary();
+  }
+  
+  // Update results summary
+  function updateResultsSummary() {
+    const visibleCount = filteredTasks.filter(task => !task.element.classList.contains('d-none')).length;
+    const totalCount = allTasks.length;
+    document.getElementById('visibleCount').textContent = visibleCount;
+    document.getElementById('totalCount').textContent = totalCount;
+  }
+  
+  // Filter tasks
+  function filterTasks() {
+    const searchTerm = document.getElementById('quickSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const serverFilter = document.getElementById('serverFilter').value;
+    const scriptFilter = document.getElementById('scriptFilter').value;
+    const nextRunDate = document.getElementById('nextRunDate').value;
+    const lastRunDate = document.getElementById('lastRunDate').value;
+    const cronPattern = document.getElementById('cronPattern').value.toLowerCase();
+    
+    filteredTasks.forEach(task => {
+      let show = true;
+      
+      // Quick search
+      if (searchTerm) {
+        const matchesSearch = task.name.includes(searchTerm) || 
+                            task.server.includes(searchTerm) || 
+                            task.script.includes(searchTerm);
+        if (!matchesSearch) show = false;
+      }
+      
+      // Status filter
+      if (statusFilter && task.status !== statusFilter) {
+        show = false;
+      }
+      
+      // Server filter
+      if (serverFilter && task.server !== serverFilter.toLowerCase()) {
+        show = false;
+      }
+      
+      // Script filter
+      if (scriptFilter && task.script !== scriptFilter.toLowerCase()) {
+        show = false;
+      }
+      
+      // Next run date filter
+      if (nextRunDate && task.nextRun) {
+        const taskDate = task.nextRun.split('T')[0];
+        if (taskDate !== nextRunDate) show = false;
+      }
+      
+      // Last run date filter
+      if (lastRunDate && task.lastRun) {
+        const taskDate = task.lastRun.split('T')[0];
+        if (taskDate !== lastRunDate) show = false;
+      }
+      
+      // Cron pattern filter
+      if (cronPattern && !task.cron.includes(cronPattern)) {
+        show = false;
+      }
+      
+      // Show/hide row
+      if (show) {
+        task.element.classList.remove('d-none');
+      } else {
+        task.element.classList.add('d-none');
+      }
+    });
+    
+    updateResultsSummary();
+  }
+  
+  // Clear all filters
+  function clearFilters() {
+    document.getElementById('quickSearch').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('serverFilter').value = '';
+    document.getElementById('scriptFilter').value = '';
+    document.getElementById('nextRunDate').value = '';
+    document.getElementById('lastRunDate').value = '';
+    document.getElementById('cronPattern').value = '';
+    
+    // Show all tasks
+    allTasks.forEach(task => {
+      task.element.classList.remove('d-none');
+    });
+    
+    filteredTasks = [...allTasks];
+    updateResultsSummary();
+  }
+  
+  // Export tasks
+  function exportTasks() {
+    const visibleTasks = filteredTasks.filter(task => !task.element.classList.contains('d-none'));
+    
+    if (visibleTasks.length === 0) {
+      alert('Dışa aktarılacak görev bulunamadı!');
+      return;
     }
+    
+    // Create CSV content
+    let csvContent = 'Görev Adı,Sunucu,Script,Durum,Cron Expression,Sonraki Çalışma,Son Çalışma\n';
+    
+    visibleTasks.forEach(task => {
+      const row = task.element;
+      const name = row.querySelector('.fw-semibold').textContent;
+      const server = row.querySelector('.badge').textContent.trim();
+      const script = row.querySelector('code').textContent;
+      const status = task.status === 'active' ? 'Aktif' : 'Pasif';
+      const cron = task.cron;
+      const nextRun = task.nextRun ? new Date(task.nextRun).toLocaleDateString('tr-TR') : '-';
+      const lastRun = task.lastRun ? new Date(task.lastRun).toLocaleDateString('tr-TR') : '-';
+      
+      csvContent += `"${name}","${server}","${script}","${status}","${cron}","${nextRun}","${lastRun}"\n`;
+    });
+    
+    // Download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `zamanlayici_gorevleri_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
+  // Toggle view between table and cards
+  function toggleView(viewType) {
+    const tableView = document.getElementById('tasksTable').closest('.card');
+    const cardViewContainer = document.getElementById('cardViewContainer');
+    const tableViewBtn = document.getElementById('tableView');
+    const cardViewBtn = document.getElementById('cardView');
+    
+    if (viewType === 'table') {
+      tableView.style.display = 'block';
+      cardViewContainer.style.display = 'none';
+      tableViewBtn.classList.add('active');
+      cardViewBtn.classList.remove('active');
+    } else {
+      tableView.style.display = 'none';
+      cardViewContainer.style.display = 'block';
+      cardViewBtn.classList.add('active');
+      tableViewBtn.classList.remove('active');
+      
+      // Populate card view
+      populateCardView();
+    }
+  }
+  
+  // Populate card view
+  function populateCardView() {
+    const cardViewBody = document.getElementById('cardViewBody');
+    const visibleTasks = filteredTasks.filter(task => !task.element.classList.contains('d-none'));
+    
+    cardViewBody.innerHTML = '';
+    
+    visibleTasks.forEach(task => {
+      const row = task.element;
+      const name = row.querySelector('.fw-semibold').textContent;
+      const server = row.querySelector('.badge').textContent.trim();
+      const script = row.querySelector('code').textContent;
+      const status = task.status === 'active' ? 'Aktif' : 'Pasif';
+      const cron = task.cron;
+      const nextRun = task.nextRun ? new Date(task.nextRun).toLocaleDateString('tr-TR') : '-';
+      const lastRun = task.lastRun ? new Date(task.lastRun).toLocaleDateString('tr-TR') : '-';
+      
+      const card = `
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="card border-0 shadow-lg h-100">
+            <div class="card-header bg-gradient-primary text-white border-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">${name}</h6>
+                <span class="badge bg-light text-primary">${status}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <strong>Sunucu:</strong> ${server}
+              </div>
+              <div class="mb-3">
+                <strong>Script:</strong> <code>${script}</code>
+              </div>
+              <div class="mb-3">
+                <strong>Cron:</strong> <code class="small">${cron}</code>
+              </div>
+              <div class="mb-3">
+                <strong>Sonraki Çalışma:</strong> ${nextRun}
+              </div>
+              <div class="mb-3">
+                <strong>Son Çalışma:</strong> ${lastRun}
+              </div>
+              <div class="btn-group w-100" role="group">
+                <button class="btn btn-outline-success btn-sm run-task-btn" 
+                        data-task-id="${task.element.getAttribute('data-task-id')}" 
+                        data-task-name="${name}">
+                  <i class="fas fa-play me-1"></i>Çalıştır
+                </button>
+                <a href="/scheduler/edit/${task.element.getAttribute('data-task-id')}" 
+                   class="btn btn-outline-warning btn-sm">
+                  <i class="fas fa-edit me-1"></i>Düzenle
+                </a>
+                <button class="btn btn-outline-danger btn-sm delete-task-btn" 
+                        data-task-id="${task.element.getAttribute('data-task-id')}" 
+                        data-task-name="${name}">
+                  <i class="fas fa-trash me-1"></i>Sil
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      cardViewBody.innerHTML += card;
+    });
+    
+    // Re-attach event listeners for card view buttons
+    attachCardViewEventListeners();
+  }
+  
+  // Attach event listeners for card view buttons
+  function attachCardViewEventListeners() {
     // Run task buttons
-    document.querySelectorAll('.run-task-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const taskId = this.dataset.taskId;
-            const taskName = this.dataset.taskName;
-            runTask(taskId, taskName);
+    document.querySelectorAll('#cardViewContainer .run-task-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const taskId = this.getAttribute('data-task-id');
+        const taskName = this.getAttribute('data-task-name');
+        
+        document.getElementById('run-task-name').textContent = taskName;
+        document.getElementById('run-task-form').action = `/scheduler/run/${taskId}`;
+        
+        new bootstrap.Modal(document.getElementById('runTaskModal')).show();
         });
     });
+    
     // Delete task buttons
-    document.querySelectorAll('.delete-task-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const taskId = this.dataset.taskId;
-            const taskName = this.dataset.taskName;
-            deleteTask(taskId, taskName);
+    document.querySelectorAll('#cardViewContainer .delete-task-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const taskId = this.getAttribute('data-task-id');
+        const taskName = this.getAttribute('data-task-name');
+        
+        document.getElementById('delete-task-name').textContent = taskName;
+        document.getElementById('delete-task-form').action = `/scheduler/delete/${taskId}`;
+        
+        new bootstrap.Modal(document.getElementById('deleteTaskModal')).show();
         });
     });
-    // Calculate today's tasks count
-    calculateTodayTasks();
-});
+  }
 
+  // Bugün çalışacak görev sayısını hesapla
 function calculateTodayTasks() {
     const today = new Date();
-    const todayStr = today.toLocaleDateString('tr-TR');
-    console.log('Bugünün tarihi:', todayStr);
+    const todayStr = today.toISOString().split('T')[0];
     let todayCount = 0;
     
-    document.querySelectorAll('.task-card').forEach((card, index) => {
-        const nextRunElement = card.querySelector('.info-value .text-primary');
-        console.log(`Görev ${index + 1}:`, nextRunElement ? nextRunElement.textContent : 'Element bulunamadı');
-        
-        if (nextRunElement) {
-            // Sadece tarih kısmını al (gün.ay.yıl)
-            const datePart = nextRunElement.textContent.trim().split(' ')[0];
-            console.log(`Görev ${index + 1} tarih kısmı:`, datePart);
-            
-            if (datePart === todayStr) {
+    // Bu basit bir hesaplama, gerçek cron parsing için daha gelişmiş bir kütüphane gerekir
+    document.querySelectorAll('.task-row').forEach(row => {
+      const nextRunCell = row.querySelector('.next-run-info');
+      if (nextRunCell && nextRunCell.textContent.includes(todayStr.split('-')[2])) {
             todayCount++;
-                console.log(`Eşleşme bulundu! Görev ${index + 1} bugün çalışacak.`);
-            }
         }
     });
     
-    console.log('Toplam bugün çalışacak görev sayısı:', todayCount);
     document.getElementById('today-count').textContent = todayCount;
 }
 
-// Her 30 saniyede bir otomatik kontrol (isteğe bağlı)
-// setInterval(checkScheduledTasks, 30000);
+  // Event listeners
+  document.getElementById('quickSearch').addEventListener('input', filterTasks);
+  document.getElementById('statusFilter').addEventListener('change', filterTasks);
+  document.getElementById('serverFilter').addEventListener('change', filterTasks);
+  document.getElementById('scriptFilter').addEventListener('change', filterTasks);
+  document.getElementById('nextRunDate').addEventListener('change', filterTasks);
+  document.getElementById('lastRunDate').addEventListener('change', filterTasks);
+  document.getElementById('cronPattern').addEventListener('input', filterTasks);
+  
+  document.getElementById('clearFilters').addEventListener('click', clearFilters);
+  document.getElementById('exportTasks').addEventListener('click', exportTasks);
+  
+  document.getElementById('tableView').addEventListener('click', () => toggleView('table'));
+  document.getElementById('cardView').addEventListener('click', () => toggleView('card'));
+  
+  // Delete task functionality
+  document.querySelectorAll('.delete-task-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const taskId = this.getAttribute('data-task-id');
+      const taskName = this.getAttribute('data-task-name');
+      const taskRow = this.closest('.task-row');
+      const taskServer = taskRow.querySelector('.badge').textContent.trim();
+      const taskScript = taskRow.querySelector('code').textContent.trim();
+      
+      document.getElementById('delete-task-name').textContent = taskName;
+      document.getElementById('delete-task-server').textContent = taskServer;
+      document.getElementById('delete-task-script').textContent = taskScript;
+      document.getElementById('delete-task-form').action = `/scheduler/delete/${taskId}`;
+      
+      new bootstrap.Modal(document.getElementById('deleteTaskModal')).show();
+    });
+  });
+  
+  // Run task functionality
+  document.querySelectorAll('.run-task-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const taskId = this.getAttribute('data-task-id');
+      const taskName = this.getAttribute('data-task-name');
+      const taskRow = this.closest('.task-row');
+      const taskServer = taskRow.querySelector('.badge').textContent.trim();
+      const taskScript = taskRow.querySelector('code').textContent.trim();
+      
+      document.getElementById('run-task-name').textContent = taskName;
+      document.getElementById('run-task-server').textContent = taskServer;
+      document.getElementById('run-task-script').textContent = taskScript;
+      document.getElementById('run-task-form').action = `/scheduler/run/${taskId}`;
+      
+      new bootstrap.Modal(document.getElementById('runTaskModal')).show();
+    });
+  });
+  
+  // Initialize
+  initializeTasks();
+  calculateTodayTasks();
+});
 </script>
 {% endblock %} 

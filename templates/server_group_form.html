@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Grup Düzenle' if group else 'Yeni Grup' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-layer-group text-primary"></i>
+            {{ 'Grup Düzenle' if group else 'Yeni Grup' }}
+        </h1>
+        <a href="{{ url_for('server_groups') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Geri
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {{ 'Grup Bilgilerini Düzenle' if group else 'Yeni Grup Oluştur' }}
+                    </h6>
+    </div>
+    <div class="card-body">
+                    <form method="post">
+        <div class="mb-3">
+                            <label for="name" class="form-label">Grup Adı <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ group.name if group else '' }}" required>
+                            <div class="form-text">Grubun benzersiz adını girin (örn: Firma A Sunucuları)</div>
+        </div>
+        
+        <div class="mb-3">
+                            <label for="description" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ group.description if group else '' }}</textarea>
+                            <div class="form-text">Grubun amacını ve içeriğini açıklayın</div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="color" class="form-label">
+          <i class="fas fa-palette me-1"></i>Grup Rengi
+        </label>
+        <select class="form-select" id="color" name="color">
+          <option value="primary" {{ 'selected' if group and group.color == 'primary' else '' }}>Mavi (primary)</option>
+          <option value="secondary" {{ 'selected' if group and group.color == 'secondary' else '' }}>Gri (secondary)</option>
+          <option value="success" {{ 'selected' if group and group.color == 'success' else '' }}>Yeşil (success)</option>
+          <option value="danger" {{ 'selected' if group and group.color == 'danger' else '' }}>Kırmızı (danger)</option>
+          <option value="warning" {{ 'selected' if group and group.color == 'warning' else '' }}>Sarı (warning)</option>
+          <option value="info" {{ 'selected' if group and group.color == 'info' else '' }}>Açık Mavi (info)</option>
+          <option value="dark" {{ 'selected' if group and group.color == 'dark' else '' }}>Siyah (dark)</option>
+          <option value="light" {{ 'selected' if group and group.color == 'light' else '' }}>Açık Gri (light)</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="icon" class="form-label">
+          <i class="fas fa-icons me-1"></i>Grup İkonu
+          </label>
+        <select class="form-select" id="icon" name="icon">
+          <option value="fa-layer-group" {{ 'selected' if group and group.icon == 'fa-layer-group' else '' }}>Katman (fa-layer-group)</option>
+          <option value="fa-server" {{ 'selected' if group and group.icon == 'fa-server' else '' }}>Sunucu (fa-server)</option>
+          <option value="fa-users" {{ 'selected' if group and group.icon == 'fa-users' else '' }}>Kullanıcılar (fa-users)</option>
+          <option value="fa-database" {{ 'selected' if group and group.icon == 'fa-database' else '' }}>Veritabanı (fa-database)</option>
+          <option value="fa-fire" {{ 'selected' if group and group.icon == 'fa-fire' else '' }}>Ateş (fa-fire)</option>
+          <option value="fa-check" {{ 'selected' if group and group.icon == 'fa-check' else '' }}>Onay (fa-check)</option>
+          <option value="fa-info-circle" {{ 'selected' if group and group.icon == 'fa-info-circle' else '' }}>Bilgi (fa-info-circle)</option>
+          <option value="fa-exclamation-triangle" {{ 'selected' if group and group.icon == 'fa-exclamation-triangle' else '' }}>Uyarı (fa-exclamation-triangle)</option>
+        </select>
+        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('server_groups') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> İptal
+                            </a>
+          <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Güncelle' if group else 'Oluştur' }}
+          </button>
+        </div>
+      </form>
+                </div>
+            </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

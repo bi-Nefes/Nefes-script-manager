@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}MFA Doğrulama - Script Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="card border-0 shadow-lg">
+        <div class="card-header bg-primary text-white text-center">
+          <h3 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>İki Faktörlü Doğrulama
+          </h3>
+        </div>
+        <div class="card-body p-5">
+          
+          <div class="text-center mb-4">
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>{{ user.username }}</strong> hesabınız için güvenlik doğrulaması gerekiyor
+            </div>
+          </div>
+
+          <!-- TOTP Doğrulama -->
+          <div class="mb-4">
+            <h5 class="text-center mb-3">
+              <i class="fas fa-mobile-alt me-2"></i>MFA Uygulamasından Kodu Girin
+            </h5>
+            <form method="POST">
+              <div class="form-group mb-3">
+                <label for="token" class="form-label fw-semibold">6 Haneli Doğrulama Kodu:</label>
+                <input type="text" 
+                       class="form-control form-control-lg text-center font-monospace" 
+                       id="token" 
+                       name="token" 
+                       maxlength="6" 
+                       pattern="[0-9]{6}" 
+                       placeholder="000000"
+                       autocomplete="off"
+                       required>
+                <div class="form-text">
+                  <i class="fas fa-clock me-1"></i>Kod 30 saniyede bir değişir
+                </div>
+              </div>
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="fas fa-sign-in-alt me-2"></i>Giriş Yap
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <hr class="my-4">
+
+          <!-- Yedek Kod ile Giriş -->
+          <div class="mb-4">
+            <h5 class="text-center mb-3">
+              <i class="fas fa-key me-2"></i>Yedek Kod ile Giriş
+            </h5>
+            <form method="POST">
+              <div class="form-group mb-3">
+                <label for="backup_code" class="form-label fw-semibold">Yedek Kod:</label>
+                <input type="text" 
+                       class="form-control form-control-lg text-center font-monospace" 
+                       id="backup_code" 
+                       name="backup_code" 
+                       maxlength="8" 
+                       pattern="[0-9A-Fa-f]{8}" 
+                       placeholder="XXXXXXXX"
+                       autocomplete="off">
+                <div class="form-text">
+                  <i class="fas fa-exclamation-triangle me-1"></i>Telefonunuzu kaybettiğinizde kullanın
+                </div>
+              </div>
+              <div class="text-center">
+                <button type="submit" class="btn btn-outline-warning btn-lg">
+                  <i class="fas fa-key me-2"></i>Yedek Kod ile Giriş
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Yardım -->
+          <div class="text-center">
+            <div class="alert alert-light">
+              <h6 class="alert-heading">
+                <i class="fas fa-question-circle me-2"></i>Yardıma mı ihtiyacınız var?
+              </h6>
+              <p class="mb-2">MFA uygulamasından 6 haneli kodu girin veya yedek kodunuzu kullanın.</p>
+              <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Giriş Sayfasına Dön
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.font-monospace {
+  font-family: 'Courier New', monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.2em;
+}
+
+.form-control-lg {
+  height: 3.5rem;
+  font-size: 1.5rem;
+}
+
+#token:focus, #backup_code:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.25);
+}
+</style>
+
+<script>
+// Sadece sayı girişi (TOTP için)
+document.getElementById('token').addEventListener('input', function(e) {
+  this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// Sadece hex karakter girişi (backup code için)
+document.getElementById('backup_code').addEventListener('input', function(e) {
+  this.value = this.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+});
+
+// Otomatik focus
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('token').focus();
+});
+</script>
+{% endblock %} 

@@ -1,506 +1,898 @@
-{% extends 'base.html' %}
-{% block title %}Script Manager - Ana Sayfa{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Script Manager{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-  <!-- Welcome Section -->
-  <div class="row mb-5">
-    <div class="col-12">
-      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%);">
-        <div class="card-body text-center py-5">
-          <div class="welcome-icon mb-4">
-            <i class="fas fa-rocket fa-4x text-white opacity-75"></i>
-          </div>
-          <h1 class="display-6 mb-3 text-white fw-bold">Hoşgeldiniz, {{ current_user.username }}!</h1>
-          <p class="lead mb-0 text-white opacity-90">Script Manager ile sunucularınızı kolayca yönetin</p>
-          <div class="mt-4">
-            <span class="badge bg-white text-primary px-3 py-2 me-2">
+<div class="dashboard-container">
+  <!-- Top Navigation Bar -->
+  <div class="top-nav">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <div class="welcome-section">
+            <h2 class="welcome-text">
+              <i class="fas fa-terminal me-2"></i>
+              Hoşgeldiniz
+            </h2>
+            <p class="welcome-subtitle">
+              <i class="fas fa-user me-1"></i>{{ current_user.username }} 
+              <span class="separator">•</span> 
               <i class="fas fa-clock me-1"></i>{{ current_time }}
-            </span>
-            <span class="badge bg-white text-primary px-3 py-2">
-              <i class="fas fa-user me-1"></i>{{ current_user.role_display_name }}
-            </span>
+              <span class="separator">•</span> 
+              <i class="fas fa-shield-alt me-1"></i>{{ current_user.role_display_name }}
+            </p>
+          </div>
+        </div>
+        <div class="col-md-6 text-end">
+          <div class="quick-actions">
+            <a href="{{ url_for('run_script') }}" class="btn btn-primary btn-sm me-2">
+              <i class="fas fa-play me-1"></i>Script Çalıştır
+            </a>
+            <a href="{{ url_for('servers') }}" class="btn btn-primary btn-sm me-2">
+              <i class="fas fa-server me-1"></i>Sunucular
+            </a>
+            <a href="{{ url_for('scripts') }}" class="btn btn-primary btn-sm">
+              <i class="fas fa-code me-1"></i>Scriptler
+            </a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Statistics Cards -->
-  <div class="row mb-5">
-    <div class="col-xl-3 col-md-6 mb-4">
-      <a href="{{ url_for('servers') }}" class="text-decoration-none">
-      <div class="card border-0 shadow-sm h-100 hover-card">
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center">
-            <div class="flex-grow-1">
-              <h6 class="text-muted text-uppercase fw-semibold mb-2">Toplam Sunucu</h6>
-              <h2 class="mb-0 fw-bold text-primary">{{ servers|length if servers else 0 }}</h2>
-              </div>
-            <div class="stat-icon">
-              <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                <i class="fas fa-server fa-2x text-primary"></i>
-              </div>
+  <!-- Main Dashboard Content -->
+  <div class="container-fluid py-4">
+    
+    <!-- Key Metrics Row -->
+    <div class="row mb-4">
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+        <div class="metric-card primary-gradient">
+          <div class="metric-icon">
+            <i class="fas fa-server"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-number">{{ servers|length }}</div>
+            <div class="metric-label">Aktif Sunucu</div>
+            <div class="metric-trend">
+              <i class="fas fa-arrow-up text-success"></i>
+              <span class="text-success">+{{ servers|length }}</span>
             </div>
           </div>
         </div>
       </div>
-      </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-      <a href="{{ url_for('scripts') }}" class="text-decoration-none">
-      <div class="card border-0 shadow-sm h-100 hover-card">
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center">
-            <div class="flex-grow-1">
-              <h6 class="text-muted text-uppercase fw-semibold mb-2">Toplam Script</h6>
-              <h2 class="mb-0 fw-bold text-success">{{ scripts|length if scripts else 0 }}</h2>
-              </div>
-            <div class="stat-icon">
-              <div class="bg-success bg-opacity-10 rounded-circle p-3">
-                <i class="fas fa-code fa-2x text-success"></i>
-              </div>
+      
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+        <div class="metric-card success-gradient">
+          <div class="metric-icon">
+            <i class="fas fa-code"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-number">{{ scripts|length }}</div>
+            <div class="metric-label">Toplam Script</div>
+            <div class="metric-trend">
+              <i class="fas fa-arrow-up text-success"></i>
+              <span class="text-success">+{{ scripts|length }}</span>
             </div>
           </div>
         </div>
       </div>
-      </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-      <a href="{{ url_for('scheduler') }}" class="text-decoration-none">
-      <div class="card border-0 shadow-sm h-100 hover-card">
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center">
-            <div class="flex-grow-1">
-              <h6 class="text-muted text-uppercase fw-semibold mb-2">Aktif Görev</h6>
-              <h2 class="mb-0 fw-bold text-info">{{ tasks|length if tasks else 0 }}</h2>
-              </div>
-            <div class="stat-icon">
-              <div class="bg-info bg-opacity-10 rounded-circle p-3">
-                <i class="fas fa-clock fa-2x text-info"></i>
-              </div>
+      
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+        <div class="metric-card warning-gradient">
+          <div class="metric-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-number">{{ tasks|length }}</div>
+            <div class="metric-label">Zamanlanmış Görev</div>
+            <div class="metric-trend">
+              <i class="fas fa-clock text-warning"></i>
+              <span class="text-warning">{{ today_tasks|length }} bugün</span>
             </div>
           </div>
         </div>
       </div>
-      </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-      <a href="{{ url_for('logs') }}" class="text-decoration-none">
-      <div class="card border-0 shadow-sm h-100 hover-card">
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center">
-            <div class="flex-grow-1">
-              <h6 class="text-muted text-uppercase fw-semibold mb-2">Toplam Log</h6>
-              <h2 class="mb-0 fw-bold text-warning">{{ logs|length if logs else 0 }}</h2>
-              </div>
-            <div class="stat-icon">
-              <div class="bg-warning bg-opacity-10 rounded-circle p-3">
-                <i class="fas fa-list fa-2x text-warning"></i>
-              </div>
+      
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
+        <div class="metric-card info-gradient">
+          <div class="metric-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-number">{{ logs|length }}</div>
+            <div class="metric-label">Toplam Log</div>
+            <div class="metric-trend">
+              <i class="fas fa-arrow-up text-info"></i>
+              <span class="text-info">+{{ logs|length }}</span>
             </div>
           </div>
         </div>
       </div>
-      </a>
     </div>
-  </div>
 
-  <!-- Quick Access Section -->
-  <div class="row mb-5">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-0 py-3">
-          <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-semibold">
-              <i class="fas fa-star me-2 text-warning"></i>Hızlı Erişim
+    <!-- Main Content Row -->
+    <div class="row">
+      <!-- Left Column -->
+      <div class="col-xl-8 col-lg-7 mb-4">
+        
+        <!-- Activity Chart -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h5 class="card-title">
+              <i class="fas fa-chart-area me-2"></i>
+              Son 7 Gün Aktivite Grafiği
+            </h5>
+            <div class="card-actions">
+              <button class="btn btn-sm btn-outline-primary" onclick="refreshChart()">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="activityChart" height="100"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h5 class="card-title">
+              <i class="fas fa-history me-2"></i>
+              Son Aktiviteler
+            </h5>
+            <a href="{{ url_for('logs') }}" class="btn btn-sm btn-outline-primary">
+              Tümünü Gör
+            </a>
+          </div>
+          <div class="card-body p-0">
+            <div class="activity-list">
+              {% for log in recent_logs %}
+              <div class="activity-item">
+                <div class="activity-icon">
+                  {% if log.status == 'success' %}
+                    <div class="icon-bg success">
+                      <i class="fas fa-check"></i>
+                    </div>
+                  {% elif log.status == 'error' %}
+                    <div class="icon-bg danger">
+                      <i class="fas fa-times"></i>
+                    </div>
+                  {% elif log.status == 'started' %}
+                    <div class="icon-bg warning">
+                      <i class="fas fa-play"></i>
+                    </div>
+                  {% elif log.status == 'timeout' %}
+                    <div class="icon-bg warning">
+                      <i class="fas fa-clock"></i>
+                    </div>
+                  {% else %}
+                    <div class="icon-bg secondary">
+                      <i class="fas fa-question"></i>
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="activity-content">
+                  <div class="activity-title">
+                    <strong>{{ log.script.name if log.script else 'Bilinmeyen Script' }}</strong>
+                    <span class="activity-status">
+                      {% if log.status == 'started' %}
+                        <span class="badge bg-warning bg-opacity-75">Başlatıldı</span>
+                      {% elif log.status == 'timeout' %}
+                        <span class="badge bg-warning bg-opacity-75">Timeout</span>
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="activity-details">
+                    {{ log.server.name if log.server else 'Bilinmeyen Sunucu' }} • {{ log.timestamp|time_ago }}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column -->
+      <div class="col-xl-4 col-lg-5 mb-4">
+        
+        <!-- Quick Stats -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h5 class="card-title">
+              <i class="fas fa-tachometer-alt me-2"></i>
+              Hızlı İstatistikler
             </h5>
           </div>
+          <div class="card-body">
+            <div class="quick-stats">
+              <div class="stat-item">
+                <div class="stat-icon bg-primary">
+                  <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ today_tasks|length }}</div>
+                  <div class="stat-label">Bugün Çalışacak</div>
+                </div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-icon bg-success">
+                  <i class="fas fa-fire"></i>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ popular_scripts[0].usage_count if popular_scripts else 0 }}</div>
+                  <div class="stat-label">En Popüler Script</div>
+                </div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-icon bg-warning">
+                  <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ logs|selectattr('status', 'equalto', 'error')|list|length }}</div>
+                  <div class="stat-label">Hata Sayısı</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="card-body p-4">
-          <!-- Sekmeli Geçiş -->
-          <div class="quick-access-tabs mb-3">
-            <ul class="nav nav-pills">
-              <li class="nav-item">
-                <a class="nav-link active" id="fav-tab" data-bs-toggle="pill" href="#favorites-section">
-                  <i class="fas fa-heart"></i> Favoriler
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="recent-tab" data-bs-toggle="pill" href="#recent-section">
-                  <i class="fas fa-history"></i> Son Kullanılanlar
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="popular-tab" data-bs-toggle="pill" href="#popular-section">
-                  <i class="fas fa-fire"></i> Popüler
-                </a>
-              </li>
-            </ul>
+
+        <!-- Popular Scripts -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h5 class="card-title">
+              <i class="fas fa-star me-2"></i>
+              Popüler Scriptler
+            </h5>
           </div>
-          <div class="tab-content">
-            <!-- Favoriler -->
-            <div class="tab-pane fade show active" id="favorites-section">
-            {% if current_user.favorite_scripts %}
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                {% for script in current_user.favorite_scripts[:8] %}
-                  <div class="col">
-                    <div class="card border-0 shadow-sm h-100 script-card hover-card">
-                      <div class="card-body p-3 d-flex flex-column">
-                      <div class="d-flex justify-content-between align-items-start mb-2">
-                          <h6 class="card-title mb-0 fw-semibold text-truncate">{{ script.name }}</h6>
-                          <span class="badge bg-primary">{{ script.script_type }}</span>
-                      </div>
-                        <p class="card-text small text-muted mb-2 flex-grow-1">{{ script.description[:60] }}{% if script.description|length > 60 %}...{% endif %}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                        <small class="text-muted">
-                          <i class="fas fa-play me-1"></i>{{ script.usage_count }} kez
-                        </small>
-                        <div class="btn-group btn-group-sm">
-                          <button class="btn btn-outline-primary btn-sm" onclick="quickRun('{{ script.id }}')" title="Hızlı Çalıştır">
-                            <i class="fas fa-bolt"></i>
-                          </button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="showScriptDetail('{{ script.id }}')" title="Detay">
-                              <i class="fas fa-info-circle"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="removeFavorite('{{ script.id }}')" title="Favorilerden Çıkar">
-                            <i class="fas fa-heart-broken"></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+          <div class="card-body p-0">
+            <div class="popular-scripts">
+              {% for script in popular_scripts[:5] %}
+              <div class="script-item">
+                <div class="script-icon">
+                  <i class="fas fa-code"></i>
+                </div>
+                <div class="script-info">
+                  <div class="script-name">{{ script.name }}</div>
+                  <div class="script-usage">{{ script.usage_count }} kez kullanıldı</div>
+                </div>
+                <div class="script-actions">
+                  <a href="{{ url_for('run_script') }}?script_id={{ script.id }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-play"></i>
+                  </a>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Tasks -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h5 class="card-title">
+              <i class="fas fa-calendar-day me-2"></i>
+              Bugün Çalışacak Görevler
+            </h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="today-tasks">
+              {% if today_tasks %}
+                {% for task_info in today_tasks[:3] %}
+                <div class="task-item">
+                  <div class="task-time">{{ task_info.time_str }}</div>
+                  <div class="task-info">
+                    <div class="task-name">{{ task_info.task.name }}</div>
+                    <div class="task-details">{{ task_info.task.server.name }} • {{ task_info.task.script.name }}</div>
                   </div>
                 </div>
                 {% endfor %}
-              </div>
-            {% else %}
-                <div class="text-center py-5">
-                  <div class="empty-state">
-                    <img src="https://undraw.co/api/illustrations/empty?color=primary" alt="Boş" style="max-width:120px;opacity:0.7;" class="mb-3">
-                    <h6 class="text-muted mb-2">Henüz favori script yok</h6>
-                    <p class="text-muted mb-3">Scriptler sayfasından favori scriptlerinizi ekleyin</p>
-                    <a href="/scripts" class="btn btn-primary btn-sm">
-                      <i class="fas fa-plus me-1"></i>Script Ekle
-                    </a>
-                  </div>
-              </div>
-            {% endif %}
-          </div>
-            <!-- Son Kullanılanlar -->
-            <div class="tab-pane fade" id="recent-section">
-            {% if recent_scripts %}
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                {% for script in recent_scripts[:8] %}
-                  <div class="col">
-                    <div class="card border-0 shadow-sm h-100 script-card hover-card">
-                      <div class="card-body p-3 d-flex flex-column">
-                      <div class="d-flex justify-content-between align-items-start mb-2">
-                          <h6 class="card-title mb-0 fw-semibold text-truncate">{{ script.name }}</h6>
-                          <span class="badge bg-success">{{ script.script_type }}</span>
-                      </div>
-                        <p class="card-text small text-muted mb-2 flex-grow-1">{{ script.description[:60] }}{% if script.description|length > 60 %}...{% endif %}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                        <small class="text-muted">
-                          <i class="fas fa-clock me-1"></i>{{ script.last_used|time_ago }}
-                        </small>
-                        <div class="btn-group btn-group-sm">
-                          <button class="btn btn-outline-success btn-sm" onclick="quickRun('{{ script.id }}')" title="Hızlı Çalıştır">
-                            <i class="fas fa-bolt"></i>
-                          </button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="showScriptDetail('{{ script.id }}')" title="Detay">
-                              <i class="fas fa-info-circle"></i>
-                          </button>
-                          <button class="btn btn-outline-primary btn-sm" onclick="addToFavorites('{{ script.id }}')" title="Favorilere Ekle">
-                            <i class="fas fa-heart"></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                {% if today_tasks|length > 3 %}
+                <div class="task-more">
+                  <a href="{{ url_for('scheduler') }}" class="text-primary">
+                    +{{ today_tasks|length - 3 }} görev daha...
+                  </a>
                 </div>
-                {% endfor %}
-              </div>
-            {% else %}
-                <div class="text-center py-5">
-                  <div class="empty-state">
-                    <img src="https://undraw.co/api/illustrations/empty?color=success" alt="Boş" style="max-width:120px;opacity:0.7;" class="mb-3">
-                    <h6 class="text-muted mb-2">Henüz son kullanılan script yok</h6>
-                    <p class="text-muted mb-3">Scriptleri çalıştırdıkça burada göreceksiniz</p>
-                  </div>
-              </div>
-            {% endif %}
-          </div>
-            <!-- Popüler -->
-            <div class="tab-pane fade" id="popular-section">
-            {% if popular_scripts %}
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                {% for script in popular_scripts[:8] %}
-                  <div class="col">
-                    <div class="card border-0 shadow-sm h-100 script-card hover-card">
-                      <div class="card-body p-3 d-flex flex-column">
-                      <div class="d-flex justify-content-between align-items-start mb-2">
-                          <h6 class="card-title mb-0 fw-semibold text-truncate">{{ script.name }}</h6>
-                          <span class="badge bg-info">{{ script.script_type }}</span>
-                      </div>
-                        <p class="card-text small text-muted mb-2 flex-grow-1">{{ script.description[:60] }}{% if script.description|length > 60 %}...{% endif %}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                        <small class="text-muted">
-                          <i class="fas fa-fire me-1"></i>{{ script.usage_count }} kez
-                        </small>
-                        <div class="btn-group btn-group-sm">
-                          <button class="btn btn-outline-info btn-sm" onclick="quickRun('{{ script.id }}')" title="Hızlı Çalıştır">
-                            <i class="fas fa-bolt"></i>
-                          </button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="showScriptDetail('{{ script.id }}')" title="Detay">
-                              <i class="fas fa-info-circle"></i>
-                          </button>
-                          <button class="btn btn-outline-primary btn-sm" onclick="addToFavorites('{{ script.id }}')" title="Favorilere Ekle">
-                            <i class="fas fa-heart"></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {% endfor %}
-              </div>
-            {% else %}
-                <div class="text-center py-5">
-                  <div class="empty-state">
-                    <img src="https://undraw.co/api/illustrations/empty?color=info" alt="Boş" style="max-width:120px;opacity:0.7;" class="mb-3">
-                    <h6 class="text-muted mb-2">Henüz popüler script yok</h6>
-                    <p class="text-muted mb-3">Scriptler daha fazla kullanıldıkça burada göreceksiniz</p>
-                  </div>
+                {% endif %}
+              {% else %}
+                <div class="no-tasks">
+                  <i class="fas fa-calendar-times text-muted"></i>
+                  <p class="text-muted mb-0">Bugün çalışacak görev yok</p>
                 </div>
               {% endif %}
             </div>
           </div>
         </div>
+
       </div>
     </div>
-  </div>
 
-  <!-- Recent Activities -->
-  <div class="row">
-    <div class="col-lg-8 mb-4">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-0 py-3">
-          <h5 class="mb-0 fw-semibold">
-            <i class="fas fa-history me-2 text-primary"></i>Son Aktiviteler
-          </h5>
-        </div>
-        <div class="card-body p-0">
-          {% if recent_logs %}
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th class="border-0 px-4 py-3">Tarih</th>
-                    <th class="border-0 px-4 py-3">Sunucu</th>
-                    <th class="border-0 px-4 py-3">Script</th>
-                    <th class="border-0 px-4 py-3">Zaman</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for log in recent_logs[:5] %}
-                  <tr>
-                    <td class="px-4 py-3">
-                      <div class="d-flex flex-column">
-                        <small class="text-muted">{{ (log.timestamp + timedelta(hours=3)).strftime('%d.%m.%Y') }}</small>
-                        <strong>{{ (log.timestamp + timedelta(hours=3)).strftime('%H:%M') }}</strong>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <span class="badge bg-primary">{{ log.server.name if log.server else '-' }}</span>
-                    </td>
-                    <td class="px-4 py-3">
-                      <code class="text-success">{{ log.script.name if log.script else '-' }}</code>
-                    </td>
-                    <td class="px-4 py-3">
-                      <small class="text-muted">
-                        <i class="fas fa-clock me-1"></i>{{ log.timestamp|time_ago }}
-                      </small>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            <div class="text-center py-3 border-top">
-              <a href="/logs" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-list me-1"></i>Tüm Kayıtları Gör
-              </a>
-            </div>
-          {% else %}
-            <div class="text-center py-5">
-              <div class="empty-state">
-              <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                <h6 class="text-muted mb-2">Henüz aktivite yok</h6>
-                <p class="text-muted mb-3">Script çalıştırdığınızda aktiviteler burada görünecek</p>
+    <!-- Bottom Row -->
+    <div class="row">
+      <div class="col-12">
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h5 class="card-title">
+              <i class="fas fa-chart-pie me-2"></i>
+              Sistem Dağılımı
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <canvas id="serverUsageChart" height="200"></canvas>
+              </div>
+              <div class="col-md-6">
+                <canvas id="scriptTypesChart" height="200"></canvas>
               </div>
             </div>
-          {% endif %}
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="col-lg-4 mb-4">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-0 py-3">
-          <h5 class="mb-0 fw-semibold">
-            <i class="fas fa-tachometer-alt me-2 text-success"></i>Sistem Durumu
-          </h5>
-        </div>
-        <div class="card-body p-4">
-          <div class="system-status">
-            <div class="status-item d-flex align-items-center mb-3">
-              <div class="status-icon me-3">
-                <i class="fas fa-server text-primary"></i>
-            </div>
-              <div class="flex-grow-1">
-                <h6 class="mb-1 fw-semibold">Sunucu Bağlantıları</h6>
-                <small class="text-muted">{{ servers|length }} aktif sunucu</small>
-            </div>
-              <div class="status-indicator">
-                <span class="badge bg-success">Aktif</span>
-          </div>
-            </div>
-            
-            <div class="status-item d-flex align-items-center mb-3">
-              <div class="status-icon me-3">
-                <i class="fas fa-clock text-warning"></i>
-              </div>
-              <div class="flex-grow-1">
-                <h6 class="mb-1 fw-semibold">Zamanlayıcı</h6>
-                <small class="text-muted">{{ tasks|length }} aktif görev</small>
-            </div>
-              <div class="status-indicator">
-                <span class="badge bg-success">Çalışıyor</span>
-          </div>
-            </div>
-            
-            <div class="status-item d-flex align-items-center mb-3">
-              <div class="status-icon me-3">
-                <i class="fas fa-database text-info"></i>
-              </div>
-              <div class="flex-grow-1">
-                <h6 class="mb-1 fw-semibold">Veritabanı</h6>
-                <small class="text-muted">MySQL bağlantısı</small>
-            </div>
-              <div class="status-indicator">
-                <span class="badge bg-success">Bağlı</span>
-          </div>
-            </div>
-            
-            <div class="status-item d-flex align-items-center">
-              <div class="status-icon me-3">
-                <i class="fas fa-shield-alt text-success"></i>
-            </div>
-              <div class="flex-grow-1">
-                <h6 class="mb-1 fw-semibold">Güvenlik</h6>
-                <small class="text-muted">Kimlik doğrulama aktif</small>
-          </div>
-              <div class="status-indicator">
-                <span class="badge bg-success">Güvenli</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
 <style>
-.welcome-icon {
-  animation: bounce 2s infinite;
+.dashboard-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
+  min-height: 100vh;
 }
 
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-}
-  40% {
-    transform: translateY(-10px);
-}
-  60% {
-    transform: translateY(-5px);
-  }
+/* Top Navigation */
+.top-nav {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-lg);
 }
 
-.stat-icon {
-  flex-shrink: 0;
-  }
+.welcome-text {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: white;
+}
 
-.script-card {
+.welcome-subtitle {
+  margin: 0.5rem 0 0 0;
+  opacity: 0.9;
+  font-size: 1rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.separator {
+  opacity: 0.6;
+  margin: 0 0.25rem;
+}
+
+.welcome-subtitle i {
+  margin-right: 0.25rem;
+  opacity: 0.8;
+}
+
+.quick-actions .btn {
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+}
+
+/* Metric Cards */
+.metric-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
   transition: all 0.3s ease;
-  cursor: pointer;
-      }
-      
-.script-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg) !important;
+  border: none;
 }
 
-.status-item {
-  padding: 1rem;
-  border-radius: var(--radius-md);
-  transition: all 0.2s ease;
-  }
-  
-.status-item:hover {
-  background: var(--bg-secondary);
+.metric-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-2xl);
 }
 
-.status-icon {
-  width: 40px;
-  height: 40px;
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+}
+
+.primary-gradient::before { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+.success-gradient::before { background: linear-gradient(90deg, var(--success), #34d399); }
+.warning-gradient::before { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+.info-gradient::before { background: linear-gradient(90deg, var(--info), #22d3ee); }
+
+.metric-card .d-flex {
+  align-items: center;
+}
+
+.metric-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  margin-right: 1rem;
+}
+
+.primary-gradient .metric-icon { background: var(--primary); }
+.success-gradient .metric-icon { background: var(--success); }
+.warning-gradient .metric-icon { background: var(--warning); }
+.info-gradient .metric-icon { background: var(--info); }
+
+.metric-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.metric-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin: 0.25rem 0;
+}
+
+.metric-trend {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 1.5rem;
+  border: none;
+  overflow: hidden;
+}
+
+.dashboard-card .card-header {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-bottom: 1px solid var(--border-light);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-card .card-title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.card-actions .btn {
   border-radius: var(--radius-md);
+  padding: 0.375rem 0.75rem;
+}
+
+/* Activity List */
+.activity-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color 0.2s ease;
+}
+
+.activity-item:hover {
+  background-color: var(--bg-secondary);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  margin-right: 1rem;
+}
+
+.icon-bg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.875rem;
+}
+
+.icon-bg.success { background: var(--success); }
+.icon-bg.danger { background: var(--danger); }
+.icon-bg.warning { background: var(--warning); }
+.icon-bg.secondary { background: var(--secondary); }
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activity-status .badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.activity-details {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Quick Stats */
+.quick-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(5px);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-right: 1rem;
+  font-size: 1.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Popular Scripts */
+.popular-scripts {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.script-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color 0.2s ease;
+}
+
+.script-item:hover {
+  background-color: var(--bg-secondary);
+}
+
+.script-item:last-child {
+  border-bottom: none;
+}
+
+.script-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  font-size: 0.875rem;
+}
+
+.script-info {
+  flex: 1;
+}
+
+.script-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.script-usage {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.script-actions .btn {
+  border-radius: var(--radius-md);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Today's Tasks */
+.today-tasks {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color 0.2s ease;
+}
+
+.task-item:hover {
+  background-color: var(--bg-secondary);
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-time {
+  background: var(--primary);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-right: 1rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+.task-info {
+  flex: 1;
+}
+
+.task-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.task-details {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.task-more {
+  text-align: center;
+  padding: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.no-tasks {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.no-tasks i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 1rem 0;
+  }
+  
+  .welcome-text {
+    font-size: 1.5rem;
+  }
+  
+  .quick-actions {
+    margin-top: 1rem;
+    text-align: center;
+  }
+  
+  .metric-card {
+    padding: 1rem;
+  }
+  
+  .metric-number {
+    font-size: 1.5rem;
+  }
+  
+  .metric-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+}
+
+/* Scrollbar Styling */
+.activity-list::-webkit-scrollbar,
+.popular-scripts::-webkit-scrollbar,
+.today-tasks::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activity-list::-webkit-scrollbar-track,
+.popular-scripts::-webkit-scrollbar-track,
+.today-tasks::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
 
-.empty-state {
-  max-width: 300px;
-  margin: 0 auto;
-    }
-
-.empty-state i {
-  opacity: 0.5;
+.activity-list::-webkit-scrollbar-thumb,
+.popular-scripts::-webkit-scrollbar-thumb,
+.today-tasks::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
 }
 
-.table th {
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
-.table td {
-  vertical-align: middle;
-}
-
-.card-header {
-  border-bottom: 1px solid var(--border-light);
-}
-
-.btn-group .btn {
-  border-radius: var(--radius-md) !important;
-}
-
-.btn-group .btn:first-child {
-  border-top-right-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-}
-
-.btn-group .btn:last-child {
-  border-top-left-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
+.activity-list::-webkit-scrollbar-thumb:hover,
+.popular-scripts::-webkit-scrollbar-thumb:hover,
+.today-tasks::-webkit-scrollbar-thumb:hover {
+  background: var(--border-dark);
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Activity Chart
+  const activityCtx = document.getElementById('activityChart').getContext('2d');
+  const activityChart = new Chart(activityCtx, {
+    type: 'line',
+    data: {
+      labels: ['{{ (datetime.now() - timedelta(days=6)).strftime("%d.%m") }}', 
+               '{{ (datetime.now() - timedelta(days=5)).strftime("%d.%m") }}', 
+               '{{ (datetime.now() - timedelta(days=4)).strftime("%d.%m") }}', 
+               '{{ (datetime.now() - timedelta(days=3)).strftime("%d.%m") }}', 
+               '{{ (datetime.now() - timedelta(days=2)).strftime("%d.%m") }}', 
+               '{{ (datetime.now() - timedelta(days=1)).strftime("%d.%m") }}', 
+               '{{ datetime.now().strftime("%d.%m") }}'],
+      datasets: [{
+        label: 'Script Çalıştırma Sayısı',
+        data: [{{ daily_executions|join(',') }}],
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)'
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+
+  // Server Usage Chart
+  const serverCtx = document.getElementById('serverUsageChart').getContext('2d');
+  new Chart(serverCtx, {
+    type: 'doughnut',
+    data: {
+      labels: [{% for server in server_usage %}'{{ server.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+      datasets: [{
+        data: [{% for server in server_usage %}{{ server.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        backgroundColor: [
+          '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+          '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+        ],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            usePointStyle: true
+          }
+        }
+      }
+    }
+  });
+
+  // Script Types Chart
+  const scriptCtx = document.getElementById('scriptTypesChart').getContext('2d');
+  new Chart(scriptCtx, {
+    type: 'doughnut',
+    data: {
+      labels: [{% for script_type in script_types %}'{{ script_type.script_type }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+      datasets: [{
+        data: [{% for script_type in script_types %}{{ script_type.count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        backgroundColor: [
+          '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899',
+          '#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'
+        ],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            usePointStyle: true
+          }
+        }
+      }
+    }
+  });
+});
+
+function refreshChart() {
+  location.reload();
+}
+</script>
 {% endblock %} 

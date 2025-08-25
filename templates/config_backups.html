@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">
+            <i class="fas fa-download me-2"></i>Config Backup'ları
+          </h4>
+          <div>
+            <span class="badge bg-light text-dark me-2">{{ backups|length }} backup</span>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#deviceSelectModal">
+              <i class="fas fa-plus me-1"></i>Backup Oluştur
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Cihaz Filtresi -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label for="device_filter" class="form-label">
+                <i class="fas fa-filter me-1"></i>Cihaz Filtresi
+              </label>
+              <select class="form-select" id="device_filter" onchange="filterByDevice(this.value)">
+                <option value="">Tüm Cihazlar</option>
+                {% for device in devices %}
+                <option value="{{ device.id }}" {% if selected_device and selected_device.id == device.id %}selected{% endif %}>
+                  {{ device.name }} ({{ device.host }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">&nbsp;</label>
+              <div>
+                <a href="/config-backups" class="btn btn-outline-secondary btn-sm">
+                  <i class="fas fa-refresh me-1"></i>Filtreyi Temizle
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th><i class="fas fa-server me-1"></i>Cihaz</th>
+                  <th><i class="fas fa-file-code me-1"></i>Backup Adı</th>
+                  <th><i class="fas fa-calendar me-1"></i>Tarih</th>
+                  <th><i class="fas fa-user me-1"></i>Oluşturan</th>
+                  <th><i class="fas fa-hdd me-1"></i>Boyut</th>
+                  <th><i class="fas fa-tag me-1"></i>Tür</th>
+                  <th><i class="fas fa-cogs me-1"></i>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for backup in backups %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        <i class="fas fa-server"></i>
+                      </div>
+                      <div>
+                        <strong>{{ backup.device.name }}</strong>
+                        <br><small class="text-muted">{{ backup.device.host }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <strong>{{ backup.backup_name }}</strong>
+                    {% if backup.description %}
+                      <br><small class="text-muted">{{ backup.description }}</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex flex-column">
+                      <small class="text-muted">{{ backup.created_at.strftime('%d.%m.%Y') }}</small>
+                      <strong>{{ backup.created_at.strftime('%H:%M') }}</strong>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{ backup.user.username }}</span>
+                  </td>
+                  <td>
+                    {% if backup.file_size %}
+                      <span class="badge bg-secondary">{{ (backup.file_size / 1024)|round(1) }} KB</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge bg-{{ 'success' if backup.backup_type == 'manual' else 'warning' if backup.backup_type == 'scheduled' else 'info' }}">
+                      {{ backup.backup_type|title }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <a href="/config-backups/download/{{ backup.id }}" class="btn btn-sm btn-outline-success" title="İndir">
+                        <i class="fas fa-download"></i>
+                      </a>
+                      <button class="btn btn-sm btn-outline-info" onclick="viewConfig({{ backup.id }})" title="Görüntüle">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-warning" onclick="compareConfig({{ backup.id }})" title="Karşılaştır">
+                        <i class="fas fa-exchange-alt"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="7" class="text-center py-5">
+                    <div class="text-muted">
+                      <i class="fas fa-download fa-3x mb-3"></i>
+                      <p class="mb-0">Henüz config backup'ı yok.</p>
+                      <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#deviceSelectModal">
+                        <i class="fas fa-plus me-1"></i>İlk Backup'ı Oluştur
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cihaz Seçim Modalı -->
+<div class="modal fade" id="deviceSelectModal" tabindex="-1" aria-labelledby="deviceSelectModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="deviceSelectModalLabel">
+          <i class="fas fa-server me-2"></i>Config Backup Oluştur
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Config backup'ı oluşturmak istediğiniz cihazı seçin:</p>
+        <div class="list-group">
+          {% for device in devices %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1">{{ device.name }}</h6>
+                <small class="text-muted">{{ device.host }}</small>
+                {% if device.device_type_info %}
+                  <br><small class="text-info">{{ device.device_type_info.vendor }} - {{ device.device_type_info.name }}</small>
+                {% endif %}
+              </div>
+              <form method="post" action="/config-backups/create/{{ device.id }}" style="display: inline;">
+                <div class="mb-2">
+                  <input type="text" class="form-control form-control-sm" name="description" 
+                         placeholder="Backup açıklaması (opsiyonel)">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="fas fa-download me-1"></i>Backup Oluştur
+                </button>
+              </form>
+            </div>
+          </div>
+          {% else %}
+          <div class="list-group-item text-center text-muted">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Network cihazı bulunamadı. Önce sunucular sayfasından network cihazı ekleyin.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Config Görüntüleme Modalı -->
+<div class="modal fade" id="configViewModal" tabindex="-1" aria-labelledby="configViewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="configViewModalLabel">
+          <i class="fas fa-file-code me-2"></i>Config İçeriği
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <pre id="configContent" style="background: #f8f9fa; padding: 1rem; border-radius: 0.375rem; max-height: 500px; overflow-y: auto;"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Kapat
+        </button>
+        <button type="button" class="btn btn-success" onclick="copyConfig()">
+          <i class="fas fa-copy me-1"></i>Kopyala
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterByDevice(deviceId) {
+  if (deviceId) {
+    window.location.href = `/config-backups?device_id=${deviceId}`;
+  } else {
+    window.location.href = '/config-backups';
+  }
+}
+
+function viewConfig(backupId) {
+  // Config içeriğini yükle ve modal'da göster
+  fetch(`/config-backups/download/${backupId}`)
+    .then(response => response.text())
+    .then(content => {
+      document.getElementById('configContent').textContent = content;
+      new bootstrap.Modal(document.getElementById('configViewModal')).show();
+    })
+    .catch(error => {
+      console.error('Config yüklenirken hata:', error);
+      alert('Config yüklenirken hata oluştu!');
+    });
+}
+
+function compareConfig(backupId) {
+  // Karşılaştırma sayfasına yönlendir
+  // Bu özellik daha sonra geliştirilecek
+  alert('Config karşılaştırma özelliği yakında eklenecek!');
+}
+
+function copyConfig() {
+  const configContent = document.getElementById('configContent').textContent;
+  navigator.clipboard.writeText(configContent).then(function() {
+    alert('Config panoya kopyalandı!');
+  }).catch(function(err) {
+    console.error('Kopyalama hatası:', err);
+    alert('Kopyalama başarısız!');
+  });
+}
+</script>
+
+<style>
+.avatar-sm {
+  font-size: 0.875rem;
+}
+
+.table > :not(caption) > * > * {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.5em 0.75em;
+}
+
+.btn-group .btn {
+  border-radius: 0.375rem !important;
+  margin-right: 0.25rem;
+}
+
+.btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+.list-group-item {
+  border: 1px solid #dee2e6;
+  margin-bottom: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+pre {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+</style>
+{% endblock %} 

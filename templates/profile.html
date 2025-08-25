@@ -101,57 +101,122 @@
           </h4>
         </div>
         <div class="card-body">
-          <h6 class="mb-3">Rol: <span class="badge bg-{{ current_user.role_color }}">{{ current_user.role_display_name }}</span></h6>
-          
           <div class="mb-3">
-            <h6 class="text-muted">Sahip Olduğunuz Yetkiler:</h6>
-            <div class="row">
-              <div class="col-12">
-                {% set permissions = {
-                  'view_dashboard': 'Dashboard Görüntüleme',
-                  'view_servers': 'Sunucu Görüntüleme',
-                  'view_scripts': 'Script Görüntüleme',
-                  'view_logs': 'Log Görüntüleme',
-                  'view_scheduler': 'Zamanlayıcı Görüntüleme',
-                  'add_server': 'Sunucu Ekleme',
-                  'edit_server': 'Sunucu Düzenleme',
-                  'delete_server': 'Sunucu Silme',
-                  'add_script': 'Script Ekleme',
-                  'edit_script': 'Script Düzenleme',
-                  'delete_script': 'Script Silme',
-                  'run_script': 'Script Çalıştırma',
-                  'add_scheduled_task': 'Zamanlanmış Görev Ekleme',
-                  'edit_scheduled_task': 'Zamanlanmış Görev Düzenleme',
-                  'delete_scheduled_task': 'Zamanlanmış Görev Silme',
-                  'run_scheduled_task': 'Zamanlanmış Görev Çalıştırma',
-                  'delete_log': 'Log Silme',
-                  'view_users': 'Kullanıcı Görüntüleme'
-                } %}
-                
-                {% for permission, description in permissions.items() %}
-                  {% if current_user.has_permission(permission) %}
-                    <div class="d-flex align-items-center mb-2">
-                      <i class="fas fa-check-circle text-success me-2"></i>
-                      <span class="small">{{ description }}</span>
-                    </div>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            </div>
+            <label class="form-label fw-bold">
+              <i class="fas fa-user-tag me-1"></i>Rol
+            </label>
+            <p class="mb-0">
+              <span class="badge bg-{{ current_user.role_color }} fs-6">
+                {{ current_user.role_display_name }}
+              </span>
+            </p>
           </div>
           
-          <div class="alert alert-info">
-            <i class="fas fa-info-circle me-1"></i>
-            <strong>Rol Açıklaması:</strong>
-            {% if current_user.role == 'admin' %}
-              Tüm yetkilere sahipsiniz. Sistem yönetimi ve kullanıcı yönetimi yapabilirsiniz.
-            {% elif current_user.role == 'manager' %}
-              Sunucu ve script yönetimi, zamanlanmış görevler ve log silme yetkiniz var.
-            {% elif current_user.role == 'user' %}
-              Script çalıştırma ve zamanlanmış görev oluşturma yetkiniz var.
-            {% elif current_user.role == 'viewer' %}
-              Sadece görüntüleme yetkiniz var. Hiçbir değişiklik yapamazsınız.
-            {% endif %}
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              <i class="fas fa-key me-1"></i>İzinler
+            </label>
+            <div class="d-flex flex-wrap gap-1">
+              {% if current_user.has_permission('view_dashboard') %}
+                <span class="badge bg-success">Dashboard</span>
+              {% endif %}
+              {% if current_user.has_permission('view_servers') %}
+                <span class="badge bg-primary">Sunucular</span>
+              {% endif %}
+              {% if current_user.has_permission('view_scripts') %}
+                <span class="badge bg-info">Scriptler</span>
+              {% endif %}
+              {% if current_user.has_permission('run_script') %}
+                <span class="badge bg-warning">Script Çalıştır</span>
+              {% endif %}
+              {% if current_user.has_permission('view_logs') %}
+                <span class="badge bg-secondary">Kayıtlar</span>
+              {% endif %}
+              {% if current_user.has_permission('view_scheduler') %}
+                <span class="badge bg-dark">Zamanlayıcı</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- MFA Güvenlik -->
+      <div class="card shadow mt-4">
+        <div class="card-header bg-warning text-dark">
+          <h4 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>İki Faktörlü Doğrulama (MFA)
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">
+              <i class="fas fa-toggle-on me-1"></i>MFA Durumu
+            </label>
+            <p class="mb-0">
+              {% if current_user.mfa_enabled %}
+                <span class="badge bg-success">
+                  <i class="fas fa-check me-1"></i>Aktif
+                </span>
+                <small class="text-muted d-block mt-1">
+                  Hesabınız güvende! Her girişte doğrulama kodu gerekiyor.
+                </small>
+              {% else %}
+                <span class="badge bg-danger">
+                  <i class="fas fa-times me-1"></i>Pasif
+                </span>
+                <small class="text-muted d-block mt-1">
+                  Hesabınızı korumak için MFA'yı aktifleştirin.
+                </small>
+              {% endif %}
+            </p>
+          </div>
+          
+          {% if current_user.mfa_enabled %}
+            <div class="mb-3">
+              <label class="form-label fw-bold">
+                <i class="fas fa-calendar-check me-1"></i>Kurulum Tarihi
+              </label>
+              <p class="mb-0">
+                {% if current_user.mfa_setup_completed %}
+                  <span class="text-success">
+                    <i class="fas fa-check-circle me-1"></i>Kurulum Tamamlandı
+                  </span>
+                {% else %}
+                  <span class="text-warning">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Kurulum Bekleniyor
+                  </span>
+                {% endif %}
+              </p>
+            </div>
+            
+            <div class="d-grid gap-2">
+              <form method="POST" action="{{ url_for('mfa_reset') }}" class="d-inline">
+                <button type="submit" class="btn btn-outline-warning btn-sm" 
+                        onclick="return confirm('MFA\'yı sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.')">
+                  <i class="fas fa-redo me-1"></i>MFA'yı Sıfırla
+                </button>
+              </form>
+              
+              <form method="POST" action="{{ url_for('mfa_disable') }}" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm"
+                        onclick="return confirm('MFA\'yı devre dışı bırakmak istediğinizden emin misiniz? Bu işlem güvenliği azaltır.')">
+                  <i class="fas fa-times me-1"></i>MFA'yı Devre Dışı Bırak
+                </button>
+              </form>
+            </div>
+          {% else %}
+            <div class="d-grid">
+              <a href="{{ url_for('mfa_setup') }}" class="btn btn-warning">
+                <i class="fas fa-shield-alt me-1"></i>MFA'yı Aktifleştir
+              </a>
+            </div>
+          {% endif %}
+          
+          <div class="mt-3">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              MFA, hesabınıza ekstra güvenlik katmanı ekler. Her girişte telefonunuzdaki uygulamadan 6 haneli kod girmeniz gerekir.
+            </small>
           </div>
         </div>
       </div>

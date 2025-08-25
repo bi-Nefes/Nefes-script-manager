@@ -1,12 +1,36 @@
 {% extends 'base.html' %}
+{% block title %}Script Çalıştır - Script Manager{% endblock %}
+
 {% block content %}
-<div class="container mt-5" style="max-width: 900px;">
-  <div class="card shadow">
-    <div class="card-header bg-info text-white">
-      <h3 class="mb-0">
-        <i class="fas fa-play me-2"></i>Script Çalıştır
-      </h3>
+<div class="container-fluid py-4">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);">
+        <div class="card-body text-white p-4">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h1 class="display-6 fw-bold mb-2">
+                <i class="fas fa-play me-3"></i>Script Çalıştır
+              </h1>
+              <p class="lead mb-0 opacity-90">
+                Seçilen sunucularda scriptleri çalıştırın ve sonuçları izleyin
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card border-0 shadow-lg">
+        <div class="card-header bg-transparent border-0">
+          <h5 class="mb-0 fw-bold text-primary">
+            <i class="fas fa-cog me-2"></i>Çalıştırma Ayarları
+          </h5>
+        </div>
     <div class="card-body">
       <form method="POST" class="mb-4" novalidate>
         <div class="row">
@@ -50,6 +74,27 @@
                     <div>
                       <strong>{{ script.name }}</strong>
                       <br><small class="text-muted">{{ script.description[:50] }}{% if script.description|length > 50 %}...{% endif %}</small>
+                      <div class="mt-1">
+                        {% if script.wait_for_output %}
+                          <span class="badge bg-success">
+                            <i class="fas fa-hourglass-half me-1"></i>Çıktı Bekler
+                          </span>
+                        {% else %}
+                          <span class="badge bg-warning">
+                            <i class="fas fa-play me-1"></i>Sadece Başlatır
+                          </span>
+                        {% endif %}
+                        
+                        {% if script.is_long_running %}
+                          <span class="badge bg-info">
+                            <i class="fas fa-clock me-1"></i>Uzun Süren
+                          </span>
+                        {% endif %}
+                        
+                        <span class="badge bg-secondary">
+                          <i class="fas fa-stopwatch me-1"></i>{{ script.default_timeout }}s
+                        </span>
+                      </div>
                     </div>
                     <div class="d-flex gap-1">
                       {% if script in current_user.favorite_scripts %}
@@ -67,37 +112,35 @@
         </div>
         
         <!-- Çalıştırma Modu -->
-        <div class="row mb-3">
-          <div class="col-12">
-            <label class="form-label">
-              <i class="fas fa-cogs me-1"></i>Çalıştırma Modu
-            </label>
-            <div class="btn-group w-100" role="group">
-              <input type="radio" class="btn-check" name="execution_mode" id="parallel" value="parallel" checked>
-              <label class="btn btn-outline-success" for="parallel">
-                <i class="fas fa-bolt me-1"></i>Paralel (Hızlı)
-              </label>
-              
-              <input type="radio" class="btn-check" name="execution_mode" id="sequential" value="sequential">
-              <label class="btn btn-outline-warning" for="sequential">
-                <i class="fas fa-list-ol me-1"></i>Sıralı (Güvenli)
-              </label>
-              
-              <input type="radio" class="btn-check" name="execution_mode" id="conditional" value="conditional">
-              <label class="btn btn-outline-info" for="conditional">
-                <i class="fas fa-shield-alt me-1"></i>Koşullu (Akıllı)
-              </label>
-            </div>
-            <small class="form-text text-muted">
-              <strong>Paralel:</strong> Tüm scriptler aynı anda çalışır (Hızlı) | 
-              <strong>Sıralı:</strong> Scriptler sırayla çalışır (Güvenli) | 
-              <strong>Koşullu:</strong> Başarılı olursa devam eder (Akıllı)
-            </small>
-          </div>
-        </div>
+        <!-- Bu bölüm kaldırıldı: Çalıştırma modu seçimi -->
         
         <!-- Sunucu Grupları Seçimi -->
-        <!-- Bu bölüm kaldırıldı: Sunucu grubu ve Grupları Yükle butonu -->
+        <div class="row mt-3">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label for="server_group_id" class="form-label">
+                <i class="fas fa-layer-group me-1"></i>Sunucu Grubu (Opsiyonel)
+              </label>
+              <select class="form-select" id="server_group_id" name="server_group_id">
+                <option value="">Grup seçin (tek tek sunucu seçimi için boş bırakın)</option>
+                {% for group in server_groups %}
+                <option value="{{ group.id }}">{{ group.name }} ({{ group.members|length }} sunucu)</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">Grup seçerseniz, o gruptaki tüm sunucularda script çalıştırılır.</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label class="form-label">&nbsp;</label>
+              <div class="d-grid">
+                <button type="button" class="btn btn-outline-info" onclick="loadGroupServers()">
+                  <i class="fas fa-sync-alt me-1"></i>Grup Sunucularını Yükle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <div class="d-grid">
           <button type="submit" class="btn btn-success btn-lg" id="runButton">
@@ -119,31 +162,14 @@
       <!-- Results Container -->
       <div id="resultsContainer" class="mt-4">
               {% if outputs %}
+        <h4>Çıktılar:</h4>
         {% for item in outputs %}
-          <div class="alert alert-{{ 'success' if item.status == 'success' else 'danger' }} mt-3">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <strong>{{ item.server.name }} ({{ item.server.host }})</strong>
-                {% if item.script %}
-                  <br><small class="text-muted">{{ item.script.name }}</small>
-                {% endif %}
-                {% if item.execution_time %}
-                  <br><small class="text-info">
-                    <i class="fas fa-clock me-1"></i>{{ "%.2f"|format(item.execution_time) }} saniye
-                  </small>
-                {% endif %}
-              </div>
-              <div class="d-flex gap-1">
-                <span class="badge bg-{{ 'success' if item.status == 'success' else 'danger' }}">
-                  <i class="fas fa-{{ 'check' if item.status == 'success' else 'times' }} me-1"></i>
-                  {{ 'Başarılı' if item.status == 'success' else 'Hata' }}
-                </span>
-                <button class="btn btn-sm btn-outline-secondary" onclick="copyOutput(this)">
-                  <i class="fas fa-copy"></i>
-                </button>
-              </div>
-            </div>
-            <pre class="mb-0 mt-2" style="white-space: pre-wrap;">{{ item.output }}</pre>
+          <div class="alert alert-{{ 'success' if item.status == 'success' else 'danger' }}">
+            <b>Sunucu:</b> {{ item.server.name }}<br>
+            <b>Script:</b> {{ item.script.name }}<br>
+            <b>Durum:</b> {{ item.status }}<br>
+            <b>Çıktı:</b>
+            <pre>{{ item.output }}</pre>
           </div>
         {% endfor %}
       {% endif %}
@@ -489,6 +515,141 @@ function createToastContainer() {
   container.style.zIndex = '9999';
   document.body.appendChild(container);
   return container;
+}
+
+// Sunucu grupları yükleme fonksiyonu
+function loadGroupServers() {
+  const groupId = document.getElementById('server_group_id').value;
+  if (!groupId) {
+    showToast('Lütfen önce bir grup seçin!', 'warning');
+    return;
+  }
+  
+  // Loading göster
+  const loadButton = document.querySelector('button[onclick="loadGroupServers()"]');
+  const originalText = loadButton.innerHTML;
+  loadButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Yükleniyor...';
+  loadButton.disabled = true;
+  
+  // AJAX ile grup sunucularını al
+  fetch(`/api/server-groups/${groupId}/servers`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        // Sunucu seçimini güncelle
+        const serverSelect = document.getElementById('server_id');
+        serverSelect.innerHTML = '';
+        
+        data.servers.forEach(server => {
+          const option = document.createElement('option');
+          option.value = server.id;
+          option.textContent = `${server.name} (${server.host})`;
+          option.selected = true; // Otomatik seç
+          serverSelect.appendChild(option);
+        });
+        
+        showToast(`${data.servers.length} sunucu yüklendi!`, 'success');
+      } else {
+        showToast(data.message || 'Sunucular yüklenemedi!', 'error');
+      }
+    })
+    .catch(err => {
+      showToast('Sunucu hatası: ' + err, 'error');
+    })
+    .finally(() => {
+      loadButton.innerHTML = originalText;
+      loadButton.disabled = false;
+    });
+}
+
+// AJAX ile script çalıştırma
+
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.querySelector('form');
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const selectedScripts = Array.from(document.querySelectorAll('.script-checkbox:checked')).map(cb => cb.value);
+    const selectedServers = Array.from(document.getElementById('server_id').selectedOptions).map(opt => opt.value);
+    
+    if (selectedScripts.length === 0) {
+      showToast('En az bir script seçmelisiniz!', 'error');
+      return;
+    }
+    if (selectedServers.length === 0) {
+      showToast('En az bir sunucu seçmelisiniz!', 'error');
+      return;
+    }
+    // Progress bar göster
+    startProgressBar(selectedScripts.length * selectedServers.length);
+    document.getElementById('runButton').disabled = true;
+    document.getElementById('runButton').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Çalıştırılıyor...';
+    // Sonuçları temizle
+    document.getElementById('resultsContainer').innerHTML = '';
+    // AJAX ile isteği gönder
+    fetch('/api/run-scripts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({
+        server_ids: selectedServers,
+        script_ids: selectedScripts
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        // Sonuçları göster
+        showOutputs(data.outputs);
+        updateProgress(selectedScripts.length * selectedServers.length);
+      } else {
+        showToast(data.message || 'Çalıştırma hatası!', 'error');
+      }
+    })
+    .catch(err => {
+      showToast('Sunucu hatası: ' + err, 'error');
+    })
+    .finally(() => {
+      document.getElementById('runButton').disabled = false;
+      document.getElementById('runButton').innerHTML = '<i class="fas fa-rocket me-2"></i>Script\'leri Çalıştır';
+    });
+  });
+});
+
+function showOutputs(outputs) {
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = '';
+  if (!outputs || outputs.length === 0) {
+    container.innerHTML = '<div class="alert alert-warning">Çıktı bulunamadı.</div>';
+    return;
+  }
+      outputs.forEach(item => {
+      const div = document.createElement('div');
+      let alertClass = 'alert-success';
+      let statusText = item.status;
+      
+      if (item.status === 'timeout') {
+        alertClass = 'alert-warning';
+        statusText = 'Timeout - Otomatik sonlandırıldı';
+      } else if (item.status === 'started') {
+        alertClass = 'alert-warning';
+        statusText = 'Başlatıldı - Arka planda çalışıyor';
+      } else if (item.status === 'error') {
+        alertClass = 'alert-danger';
+      }
+      
+      div.className = 'alert ' + alertClass;
+      div.innerHTML = `
+        <b>Sunucu:</b> ${item.server.name} (${item.server.host})<br>
+        <b>Script:</b> ${item.script.name}<br>
+        <b>Durum:</b> <span class="badge bg-${item.status === 'success' ? 'success' : item.status === 'timeout' || item.status === 'started' ? 'warning' : 'danger'}">${statusText}</span><br>
+        <b>Çıktı:</b>
+        <pre>${item.output}</pre>
+        ${item.execution_time ? `<small class='text-info'><i class='fas fa-clock me-1'></i>${item.execution_time.toFixed(2)} saniye</small>` : ''}
+      `;
+      container.appendChild(div);
+    });
 }
 </script>
 {% endblock %} 

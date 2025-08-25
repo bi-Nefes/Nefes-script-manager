@@ -1,57 +1,209 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-5" style="max-width: 500px;">
+<div class="container mt-5" style="max-width: 800px;">
   <div class="card shadow">
     <div class="card-header bg-primary text-white">
       <h3 class="mb-0">
-        <i class="fas fa-server me-2"></i>{{ 'Sunucu Ekle' if action == 'add' else 'Sunucu Düzenle' }}
+        <i class="fas fa-server me-2"></i>
+        {% if action == 'add' %}Yeni Sunucu Ekle{% else %}Sunucu Düzenle{% endif %}
       </h3>
     </div>
     <div class="card-body">
       <form method="POST" novalidate>
-        <div class="mb-3">
-          <label for="name" class="form-label"><i class="fas fa-tag me-1"></i>Sunucu Adı</label>
-          <input type="text" class="form-control" id="name" name="name" required value="{{ server.name if server else '' }}" placeholder="Örn: Üretim Sunucusu">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="name" class="form-label">
+                <i class="fas fa-tag me-1"></i>Sunucu Adı *
+              </label>
+              <input type="text" class="form-control" id="name" name="name" 
+                     value="{{ server.name if server else '' }}" required>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="host" class="form-label">
+                <i class="fas fa-globe me-1"></i>Host/IP *
+              </label>
+              <input type="text" class="form-control" id="host" name="host" 
+                     value="{{ server.host if server else '' }}" required>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label for="host" class="form-label"><i class="fas fa-globe me-1"></i>IP/Hostname</label>
-          <input type="text" class="form-control" id="host" name="host" required value="{{ server.host if server else '' }}" placeholder="Örn: 192.168.1.10 veya sunucu.domain.com">
+        
+        <div class="row">
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="port" class="form-label">
+                <i class="fas fa-network-wired me-1"></i>Port
+              </label>
+              <input type="number" class="form-control" id="port" name="port" 
+                     value="{{ server.port if server else 22 }}" min="1" max="65535">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="username" class="form-label">
+                <i class="fas fa-user me-1"></i>Kullanıcı Adı *
+              </label>
+              <input type="text" class="form-control" id="username" name="username" 
+                     value="{{ server.username if server else '' }}" required>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="password" class="form-label">
+                <i class="fas fa-lock me-1"></i>Şifre *
+              </label>
+              <input type="password" class="form-control" id="password" name="password" 
+                     value="{{ server.password if server else '' }}" required>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label for="port" class="form-label"><i class="fas fa-network-wired me-1"></i>SSH Portu</label>
-          <input type="number" class="form-control" id="port" name="port" required value="{{ server.port if server else 22 }}" placeholder="Varsayılan: 22">
+        
+        <!-- Network Cihazı Seçenekleri -->
+        <div class="card mt-4">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-network-wired me-2"></i>Network Cihazı Ayarları
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is_network_device" name="is_network_device" 
+                           {% if server and server.is_network_device %}checked{% endif %}>
+                    <label class="form-check-label" for="is_network_device">
+                      <i class="fas fa-router me-1"></i>Network Cihazı
+                    </label>
+                  </div>
+                  <small class="form-text text-muted">Bu seçenek işaretlenirse cihaz network cihazı olarak işlem görür</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="device_type_id" class="form-label">
+                    <i class="fas fa-microchip me-1"></i>Cihaz Türü
+                  </label>
+                  <select class="form-select" id="device_type_id" name="device_type_id">
+                    <option value="">Cihaz Türü Seçin</option>
+                    {% for device_type in device_types %}
+                    <option value="{{ device_type.id }}" 
+                            {% if server and server.device_type_id == device_type.id %}selected{% endif %}>
+                      {{ device_type.vendor }} - {{ device_type.name }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="device_model" class="form-label">
+                    <i class="fas fa-cube me-1"></i>Model
+                  </label>
+                  <input type="text" class="form-control" id="device_model" name="device_model" 
+                         value="{{ server.device_model if server else '' }}" 
+                         placeholder="C2960, ASR1001, etc.">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="serial_number" class="form-label">
+                    <i class="fas fa-barcode me-1"></i>Seri Numarası
+                  </label>
+                  <input type="text" class="form-control" id="serial_number" name="serial_number" 
+                         value="{{ server.serial_number if server else '' }}">
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="firmware_version" class="form-label">
+                    <i class="fas fa-code-branch me-1"></i>Firmware Versiyonu
+                  </label>
+                  <input type="text" class="form-control" id="firmware_version" name="firmware_version" 
+                         value="{{ server.firmware_version if server else '' }}">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="management_ip" class="form-label">
+                    <i class="fas fa-ip me-1"></i>Management IP
+                  </label>
+                  <input type="text" class="form-control" id="management_ip" name="management_ip" 
+                         value="{{ server.management_ip if server else '' }}" 
+                         placeholder="192.168.1.1">
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="location" class="form-label">
+                    <i class="fas fa-map-marker-alt me-1"></i>Konum
+                  </label>
+                  <input type="text" class="form-control" id="location" name="location" 
+                         value="{{ server.location if server else '' }}" 
+                         placeholder="Server Room A, Floor 2, etc.">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="rack_position" class="form-label">
+                    <i class="fas fa-server me-1"></i>Rack Pozisyonu
+                  </label>
+                  <input type="text" class="form-control" id="rack_position" name="rack_position" 
+                         value="{{ server.rack_position if server else '' }}" 
+                         placeholder="Rack1-U10, etc.">
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label for="username" class="form-label"><i class="fas fa-user me-1"></i>Kullanıcı Adı</label>
-          <input type="text" class="form-control" id="username" name="username" required value="{{ server.username if server else '' }}" placeholder="Örn: root">
-        </div>
-        <div class="mb-3 position-relative">
-          <label for="password" class="form-label"><i class="fas fa-lock me-1"></i>Şifre</label>
-          <input type="password" class="form-control" id="password" name="password" required value="{{ server.password if server else '' }}" placeholder="Sunucu şifresi">
-          <button type="button" class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-4 me-2" onclick="togglePasswordField('password')">
-            <i class="fas fa-eye"></i>
-          </button>
-        </div>
-        <div class="d-grid gap-2">
-          <button type="submit" class="btn btn-success btn-lg">
-            <i class="fas fa-save me-2"></i>Kaydet
-          </button>
-          <a href="/servers" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>İptal
+        
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+          <a href="/servers" class="btn btn-secondary me-md-2">
+            <i class="fas fa-times me-1"></i>İptal
           </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>
+            {% if action == 'add' %}Ekle{% else %}Güncelle{% endif %}
+          </button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 <script>
-function togglePasswordField(id) {
-  const field = document.getElementById(id);
-  if (field.type === 'password') {
-    field.type = 'text';
-  } else {
-    field.type = 'password';
-  }
-}
+// Network cihazı checkbox'ı değiştiğinde
+document.getElementById('is_network_device').addEventListener('change', function() {
+  const networkFields = document.querySelectorAll('#device_type_id, #device_model, #serial_number, #firmware_version, #management_ip, #location, #rack_position');
+  
+  networkFields.forEach(field => {
+    field.disabled = !this.checked;
+    if (!this.checked) {
+      field.value = '';
+    }
+  });
+});
+
+// Sayfa yüklendiğinde checkbox durumunu kontrol et
+document.addEventListener('DOMContentLoaded', function() {
+  const isNetworkDevice = document.getElementById('is_network_device');
+  const networkFields = document.querySelectorAll('#device_type_id, #device_model, #serial_number, #firmware_version, #management_ip, #location, #rack_position');
+  
+  networkFields.forEach(field => {
+    field.disabled = !isNetworkDevice.checked;
+  });
+});
 </script>
 {% endblock %} 

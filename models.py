@@ -17,12 +17,78 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     profile_photo = db.Column(db.String(255), nullable=True)  # Profil fotoğrafı dosya yolu
     favorite_scripts = db.relationship('Script', secondary='user_favorites', backref='favorited_by')
+    
+    # MFA alanları
+    mfa_secret = db.Column(db.String(32), nullable=True)  # TOTP secret key
+    mfa_enabled = db.Column(db.Boolean, default=False)  # MFA aktif mi?
+    mfa_backup_codes = db.Column(db.Text, nullable=True)  # JSON formatında yedek kodlar
+    mfa_setup_completed = db.Column(db.Boolean, default=False)  # MFA kurulum tamamlandı mı?
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    def setup_mfa(self):
+        """MFA kurulumu için yeni secret key oluşturur"""
+        import pyotp
+        import secrets
+        import json
+        
+        # Yeni secret key oluştur
+        self.mfa_secret = pyotp.random_base32()
+        self.mfa_enabled = True
+        self.mfa_setup_completed = False
+        
+        # Yedek kodlar oluştur
+        backup_codes = [secrets.token_hex(4).upper() for _ in range(10)]
+        self.mfa_backup_codes = json.dumps(backup_codes)
+        
+        return self.mfa_secret, backup_codes
+    
+    def verify_totp(self, token):
+        """TOTP token'ını doğrular"""
+        import pyotp
+        
+        if not self.mfa_secret:
+            return False
+        
+        totp = pyotp.TOTP(self.mfa_secret)
+        return totp.verify(token)
+    
+    def verify_backup_code(self, code):
+        """Yedek kodu doğrular ve kullanıldıktan sonra siler"""
+        import json
+        
+        if not self.mfa_backup_codes:
+            return False
+        
+        backup_codes = json.loads(self.mfa_backup_codes)
+        if code.upper() in backup_codes:
+            # Kullanılan kodu sil
+            backup_codes.remove(code.upper())
+            self.mfa_backup_codes = json.dumps(backup_codes)
+            return True
+        
+        return False
+    
+    def get_mfa_qr_code_data(self):
+        """MFA QR kodu için URI oluşturur"""
+        import pyotp
+        
+        if not self.mfa_secret:
+            return None
+        
+        totp = pyotp.TOTP(self.mfa_secret)
+        return totp.provisioning_uri(
+            name=self.username,
+            issuer_name="Script Manager"
+        )
+    
+    def complete_mfa_setup(self):
+        """MFA kurulumunu tamamlar"""
+        self.mfa_setup_completed = True
     
     def has_role(self, role):
         """Kullanıcının belirli bir role sahip olup olmadığını kontrol eder"""
@@ -66,6 +132,26 @@ class User(UserMixin, db.Model):
         }
         return role_colors.get(self.role, 'secondary')
 
+class DeviceType(db.Model):
+    """Network cihaz türleri"""
+    __tablename__ = 'device_types'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)  # Router, Switch, Firewall, etc.
+    vendor = db.Column(db.String(50), nullable=False)  # Cisco, Juniper, Mikrotik, etc.
+    model_family = db.Column(db.String(100))  # Catalyst, Nexus, etc.
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Varsayılan komutlar
+    show_config_cmd = db.Column(db.String(200), default='show running-config')
+    show_interfaces_cmd = db.Column(db.String(200), default='show interfaces')
+    show_version_cmd = db.Column(db.String(200), default='show version')
+    show_uptime_cmd = db.Column(db.String(200), default='show uptime')
+    extra_commands = db.Column(db.Text)  # JSON formatında ek komutlar
+    
+    devices = db.relationship('Server', backref='device_type_info')
+
 class Server(db.Model):
     __tablename__ = 'servers'
     id = db.Column(db.Integer, primary_key=True)
@@ -75,9 +161,115 @@ class Server(db.Model):
     username = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(100), nullable=False)  # Düz metin olarak saklanacak
     os_type = db.Column(db.String(50), default='windows')  # 'linux' veya 'windows'
-    # Sunucu grupları ile ilgili ilişki kaldırıldı
+    
+    # Network cihaz özellikleri
+    device_type_id = db.Column(db.Integer, db.ForeignKey('device_types.id'), nullable=True)
+    is_network_device = db.Column(db.Boolean, default=False)
+    device_model = db.Column(db.String(100))  # C2960, ASR1001, etc.
+    serial_number = db.Column(db.String(100))
+    firmware_version = db.Column(db.String(100))
+    location = db.Column(db.String(200))  # Fiziksel konum
+    rack_position = db.Column(db.String(50))  # Rack pozisyonu
+    management_ip = db.Column(db.String(15))  # Management IP
+    last_config_backup = db.Column(db.DateTime)
+    last_monitoring_check = db.Column(db.DateTime)
+    
+    # Sunucu grupları ile ilişki
+    group_memberships = db.relationship('ServerGroupMember', backref='server', cascade='all, delete-orphan')
+    
+    # Config backup'ları
+    config_backups = db.relationship('ConfigBackup', backref='device', cascade='all, delete-orphan')
+    
+    # Interface bilgileri
+    interfaces = db.relationship('NetworkInterface', backref='device', cascade='all, delete-orphan')
+    
+    # Monitoring verileri
+    monitoring_data = db.relationship('DeviceMonitoring', backref='device', cascade='all, delete-orphan')
 
-# ServerGroup ve ServerGroupMember modellerini kaldırıyorum
+class ConfigBackup(db.Model):
+    """Cihaz config backup'ları"""
+    __tablename__ = 'config_backups'
+    id = db.Column(db.Integer, primary_key=True)
+    device_id = db.Column(db.Integer, db.ForeignKey('servers.id'), nullable=False)
+    backup_name = db.Column(db.String(200), nullable=False)
+    config_content = db.Column(db.Text, nullable=False)  # Config içeriği
+    config_hash = db.Column(db.String(64), nullable=False)  # SHA256 hash
+    backup_type = db.Column(db.String(20), default='manual')  # manual, scheduled, auto
+    version = db.Column(db.String(50))  # Config versiyonu
+    description = db.Column(db.Text)  # Backup açıklaması
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    file_size = db.Column(db.Integer)  # Byte cinsinden boyut
+    
+    # Backup'ı oluşturan kullanıcı
+    user = db.relationship('User', backref='config_backups')
+
+class NetworkInterface(db.Model):
+    """Network interface bilgileri"""
+    __tablename__ = 'network_interfaces'
+    id = db.Column(db.Integer, primary_key=True)
+    device_id = db.Column(db.Integer, db.ForeignKey('servers.id'), nullable=False)
+    interface_name = db.Column(db.String(50), nullable=False)  # Gi0/1, Fa0/1, etc.
+    interface_type = db.Column(db.String(20))  # Ethernet, FastEthernet, GigabitEthernet
+    description = db.Column(db.String(200))
+    ip_address = db.Column(db.String(15))
+    subnet_mask = db.Column(db.String(15))
+    status = db.Column(db.String(20), default='down')  # up, down, administratively down
+    speed = db.Column(db.String(20))  # 100Mbps, 1Gbps, etc.
+    duplex = db.Column(db.String(20))  # full, half, auto
+    vlan = db.Column(db.Integer)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+
+class DeviceMonitoring(db.Model):
+    """Cihaz monitoring verileri"""
+    __tablename__ = 'device_monitoring'
+    id = db.Column(db.Integer, primary_key=True)
+    device_id = db.Column(db.Integer, db.ForeignKey('servers.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # CPU ve Memory
+    cpu_usage = db.Column(db.Float)  # Yüzde
+    memory_usage = db.Column(db.Float)  # Yüzde
+    memory_total = db.Column(db.BigInteger)  # Total memory (bytes)
+    memory_used = db.Column(db.BigInteger)  # Used memory (bytes)
+    
+    # Uptime
+    uptime_seconds = db.Column(db.BigInteger)  # Uptime in seconds
+    
+    # Temperature (varsa)
+    temperature = db.Column(db.Float)  # Celsius
+    
+    # Interface counters
+    total_interfaces = db.Column(db.Integer)
+    up_interfaces = db.Column(db.Integer)
+    down_interfaces = db.Column(db.Integer)
+    
+    # Error counters
+    interface_errors = db.Column(db.Integer)
+    interface_drops = db.Column(db.Integer)
+
+class ServerGroup(db.Model):
+    """Sunucu grupları için model"""
+    __tablename__ = 'server_groups'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    color = db.Column(db.String(20), default='primary')  # Bootstrap renk adı veya hex kodu
+    icon = db.Column(db.String(50), default='fa-layer-group')  # FontAwesome ikon adı
+    # Grup üyeleri
+    members = db.relationship('ServerGroupMember', backref='group', cascade='all, delete-orphan')
+
+class ServerGroupMember(db.Model):
+    """Sunucu grup üyeleri için model"""
+    __tablename__ = 'server_group_members'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('server_groups.id'), nullable=False)
+    server_id = db.Column(db.Integer, db.ForeignKey('servers.id'), nullable=False)
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    added_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 class Script(db.Model):
     __tablename__ = 'scripts'
@@ -89,6 +281,12 @@ class Script(db.Model):
     is_favorite = db.Column(db.Boolean, default=False)
     usage_count = db.Column(db.Integer, default=0)
     last_used = db.Column(db.DateTime)
+    
+    # Çıktı ve timeout ayarları
+    wait_for_output = db.Column(db.Boolean, default=True)  # Çıktı beklesin mi?
+    default_timeout = db.Column(db.Integer, default=60)  # Varsayılan timeout (saniye)
+    is_long_running = db.Column(db.Boolean, default=False)  # Uzun süren script mi?
+    
     # Gelişmiş görev yönetimi için yeni alanlar
     supports_parameters = db.Column(db.Boolean, default=False)
     supports_multi_target = db.Column(db.Boolean, default=False)

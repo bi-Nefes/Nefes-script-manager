@@ -1,14 +1,18 @@
-# NSM NEFES SCRIPT MANAGER
+# Script Manager
+
+> **Not:** Detaylı kurulum için `INSTALLATION.md`, geliştirici dokümantasyonu için `PROJECT_DOC.md` dosyalarına da bakabilirsiniz.
 
 ## 🚀 Proje Hakkında
 
-**NSM NEFES Script Manager**, birden fazla sunucuda uzaktan script çalıştırmayı, zamanlanmış görevler oluşturmayı ve sonuçları merkezi olarak yönetmeyi sağlayan modern bir web uygulamasıdır. 
+**Script Manager**, birden fazla sunucuda uzaktan script çalıştırmayı, zamanlanmış görevler oluşturmayı ve sonuçları merkezi olarak yönetmeyi sağlayan modern bir web uygulamasıdır. 
 
 - SSH ile Windows ve Linux sunucularda script çalıştırma
 - Zamanlanmış görevler (cron benzeri)
 - Kullanıcı yönetimi ve rol tabanlı erişim
 - Modern, responsive arayüz (Bootstrap 5)
 - MariaDB desteği (SQLite yerine)
+- **Sunucu gruplarına özel renk ve ikon atama**
+- **Script çalıştırma sonuçlarını anlık ve dinamik görme**
 
 ---
 
@@ -21,7 +25,7 @@
 
 ### 2. MariaDB Kurulumu ve Veritabanı Oluşturma
 
-```bash
+   ```bash
 # MariaDB sunucusunu kurun (Ubuntu/Debian)
 sudo apt update && sudo apt install mariadb-server
 
@@ -34,8 +38,8 @@ mysql -u root -p
 
 # Veritabanı ve kullanıcı oluşturun
 CREATE DATABASE ssh_script CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'ssh_user'@'localhost' IDENTIFIED BY 'güçlü_bir_şifre';
-GRANT ALL PRIVILEGES ON ssh_script.* TO 'ssh_user'@'localhost';
+CREATE USER 'sshuser'@'localhost' IDENTIFIED BY 'gizlisifre';
+GRANT ALL PRIVILEGES ON ssh_script.* TO 'sshuser'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -60,7 +64,7 @@ pip install -r requirements.txt
 `app.py` dosyasında aşağıdaki gibi MariaDB bağlantı URI'sini kullanın:
 
 ```python
-SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://ssh_user:güçlü_bir_şifre@localhost/ssh_script?charset=utf8mb4'
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://sshuser:gizlisifre@localhost/ssh_script?charset=utf8mb4'
 ```
 
 ### 6. Veritabanı Tablolarını Oluşturun
@@ -80,7 +84,7 @@ python3
 python3 app.py
 ```
 
-Uygulama varsayılan olarak 0.0.0.0:80 adresinde çalışır.
+Uygulama varsayılan olarak 0.0.0.0:5000 adresinde çalışır.
 
 ---
 
@@ -93,6 +97,8 @@ Uygulama varsayılan olarak 0.0.0.0:80 adresinde çalışır.
 - Profil fotoğrafı yükleme
 - Modern dashboard ve log ekranı
 - Hızlı erişim (favoriler, son kullanılanlar, popüler scriptler)
+- **Sunucu gruplarına özel renk ve ikon atama**
+- **Script çalıştırma sonuçlarını anlık ve dinamik görme (AJAX ile sayfa yenilemeden)**
 
 ---
 
@@ -106,6 +112,7 @@ ssh_script/
 ├── requirements.txt      # Bağımlılıklar
 ├── static/               # Statik dosyalar (JS, CSS)
 ├── templates/            # Jinja2 HTML şablonları
+├── PROJECT_DOC.md        # Geliştirici dokümantasyonu
 ```
 
 ---
@@ -115,8 +122,10 @@ ssh_script/
 - Sunucuların şifreleri düz metin olarak saklanır, güvenlik için erişimi kısıtlayın.
 - Linux ve Windows sunucular desteklenir.
 - Zamanlanmış görevler için `scheduler_worker.py` veya Flask içi zamanlayıcı kullanılabilir.
+- **Sunucu grupları için renk ve ikon ataması arayüzden veya SQL ile yapılabilir.**
+- Script çalıştırma sonuçları, çalıştırma tamamlanınca anında ekranda gösterilir.
 
 ---
 
 ## 📞 Destek & Katkı
-Sorularınız veya katkı için lütfen [issue açın](https://github.com/your-repo/issues) veya doğrudan iletişime geçin. 
+Sorularınız veya katkı için bilgi.islem@nefes.com.tr adresinden iletişime geçin.
